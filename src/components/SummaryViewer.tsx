@@ -153,50 +153,458 @@ export default function SummaryViewer({
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
-  const handleCopy = () => {
-    const text = keyPoints.join('\n');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(
-        () => toast.success('Summary copied!'),
-        () => toast.error('Copy failed')
-      );
+  // handleCopy and handleDownloadTXT removed per user request
+
+  const handleDownloadPDF = async () => {
+    try {
+      toast.info('Generating comprehensive PDF report...');
+
+      const element = document.createElement('div');
+      element.className = 'pdf-export-container';
+      element.style.padding = '40px';
+      element.style.background = '#030712';
+      element.style.color = '#f8fafc';
+      element.style.fontFamily = 'Inter, sans-serif';
+
+      let html = `
+        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
+          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
+          <p style="font-size: 14px; color: #94a3b8; margin: 0;">Comprehensive Research Report: <span style="color: #60a5fa;">${docTitle}</span></p>
+        </div>
+      `;
+
+      if (keyPoints.length > 0) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              ${keyPoints.map((p: string, idx: number) => `
+                <div style="display: flex; align-items: center; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; page-break-inside: avoid;">
+                  <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">
+                    ${idx + 1}
+                  </div>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (documentOutline.length > 0) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">outline</h2>
+            ${documentOutline.map((s, idx) => `
+              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; page-break-inside: avoid; background: #020617;">
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 14px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 15px;">
+                  <div style="width: 24px; height: 24px; background: #10b981; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">
+                    ${idx + 1}
+                  </div>
+                  <h3 style="font-size: 16px; font-weight: bold; color: #f8fafc; margin: 0;">${s.heading}</h3>
+                </div>
+                <div style="padding: 18px;">
+                  <div style="margin-bottom: 15px;">
+                    ${(s.bullets || []).map(b => `
+                      <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
+                        <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; margin-top: 8px; margin-right: 12px; flex-shrink: 0;"></span>
+                        <p style="margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.6;">${b}</p>
+                      </div>
+                    `).join('')}
+                  </div>
+                  ${(s.subSections || []).map((sub, subIdx) => `
+                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 1px solid #1e293b;">
+                      <h4 style="font-size: 14px; font-weight: bold; color: #10b981; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                        ${sub.title}
+                      </h4>
+                      <div style="padding-left: 12px;">
+                        ${(sub.bullets || []).map(sb => `
+                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px;">
+                            <span style="display: inline-block; width: 4px; height: 4px; background: #475569; border-radius: 50%; margin-top: 8px; margin-right: 10px; flex-shrink: 0;"></span>
+                            <p style="margin: 0; color: #64748b; font-size: 13px;">${sb}</p>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      const mindmapData = summary.content?.mindMap || summary.content?.mindMapData;
+      const infographicData = summary.content?.infographic || summary.content?.infographicData;
+
+      if (infographicData) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">infographic (hub,steps , orbit , flow)</h2>
+            
+            ${infographicData.sections ? `
+              <!-- Knowledge Hub (HUB) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #818cf8; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #818cf8; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #818cf8;"></span>
+                  Knowledge Hub
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  ${infographicData.sections.slice(0, 6).map((sec: any) => `
+                    <div style="background: #020617; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; border-top: 3px solid #818cf8;">
+                      <span style="font-size: 11px; font-weight: bold; color: #c7d2fe; text-transform: uppercase;">${sec.title}</span>
+                      <p style="font-size: 13px; color: #94a3b8; margin-top: 10px;">${sec.points ? sec.points[0] : ''}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Sequential Process Flow (STEPS) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #10b981; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #10b981;"></span>
+                  Sequential Steps
+                </p>
+                <div style="background: #020617; padding: 20px; border-radius: 15px; border: 1px solid #1e293b; border-left: 4px solid #10b981;">
+                  ${infographicData.sections.slice(0, 5).map((sec: any, idx: number) => `
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; ${idx < 4 ? 'border-bottom: 1px solid #1e293b;' : ''}">
+                      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                         <div style="width: 20px; height: 20px; background: #10b981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${idx + 1}</div>
+                         <span style="font-weight: 700; color: #f8fafc; font-size: 14px;">${sec.title}</span>
+                      </div>
+                      <p style="font-size: 12px; color: #94a3b8; margin-left: 32px;">${sec.points ? sec.points.join(', ') : ''}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Conceptual Orbit (ORBIT) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #22d3ee; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #22d3ee; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #22d3ee;"></span>
+                  Conceptual Orbit
+                </p>
+                <div style="background: #000000; border: 2px dashed #22d3ee; padding: 30px; border-radius: 100px; text-align: center;">
+                  <p style="font-size: 14px; color: #e0f2fe; margin-bottom: 8px; font-weight: bold;">Core Focus:</p>
+                  <p style="font-size: 16px; color: #22d3ee; margin: 0; font-weight: 800; text-transform: uppercase;">${docTitle}</p>
+                  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px;">
+                    ${infographicData.sections.slice(0, 4).map((sec: any) => `
+                      <span style="background: rgba(34, 211, 238, 0.1); border: 1px solid #22d3ee; color: #22d3ee; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold;">${sec.title}</span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Logical Interaction Flow (FLOW) -->
+              ${infographicData.logicalFlow ? `
+                <div style="margin-bottom: 10px; page-break-inside: avoid;">
+                  <p style="font-weight: bold; font-size: 15px; color: #fb923c; margin-bottom: 15px; display: flex; align-items: center;">
+                    <span style="width: 8px; height: 8px; background: #fb923c; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #fb923c;"></span>
+                    Logical Interaction Flow
+                  </p>
+                  <div style="background: #020617; border: 1px solid #1e293b; padding: 25px; border-radius: 15px; border-style: dashed; border-color: #334155;">
+                    ${infographicData.logicalFlow.slice(0, 4).map((f: any) => `
+                      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <span style="background: #0f172a; border: 1px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.from}</span>
+                        <span style="margin: 0 18px; color: #fb923c; font-weight: bold;">➔</span>
+                        <span style="background: #0f172a; border: 1px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.to}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            ` : ''}
+          </div>
+        `;
+      }
+
+      if (mindmapData?.nodes) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">mindmap</h2>
+            <div style="background: #020617; border: 1px solid #312e81; padding: 25px; border-radius: 12px; border-right: 8px solid #7c3aed;">
+              <p style="font-size: 15px; color: #e0e7ff; margin: 0;">Mapped with ${mindmapData.nodes.length} semantic nodes.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      const hashflashcards = summary.content?.flashcards || [];
+      if (hashflashcards.length > 0) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">flashcards</h2>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+              ${hashflashcards.map((f: any, i: number) => `
+                <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899;">
+                  <p style="font-weight: 700; color: #fdf2f8; margin: 0;">Q: ${f.question}</p>
+                  <p style="color: #fbcfe8; font-size: 14px; margin-top: 10px;">Ans: ${f.answer}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      const tables = summary.content?.comparativeTable || [];
+      if (Array.isArray(tables) && tables.length > 0) {
+        html += `
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">comparision</h2>
+            ${tables.map((table: any, tIdx: number) => {
+          const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
+          const rows = table.rows || (Array.isArray(table) ? table : []);
+          const tableTitle = table.title || `Comparison Table ${tIdx + 1}`;
+          return `
+                <div style="margin-bottom: 25px; page-break-inside: avoid; background: #020617; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden;">
+                  <h3 style="font-size: 15px; font-weight: bold; color: #cbd5e1; padding: 12px 20px; background: #1e293b; margin: 0;">${tableTitle}</h3>
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1;">
+                    <thead><tr style="background: #000000;">
+                      ${headers.map((h: string) => `<th style="border: 1px solid #1e293b; padding: 10px; text-align: left; color: #60a5fa;">${h}</th>`).join('')}
+                    </tr></thead>
+                    <tbody>
+                      ${rows.map((row: any) => `
+                        <tr>
+                          ${(Array.isArray(row) ? row : Object.values(row)).map((cell: any) => `<td style="border: 1px solid #1e293b; padding: 10px;">${cell || ''}</td>`).join('')}
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `;
+        }).join('')}
+          </div>
+        `;
+      }
+
+      element.innerHTML = html;
+      const opt: any = {
+        margin: 10,
+        filename: `${docTitle}_Full_Report.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      await html2pdf().set(opt).from(element).save();
+      toast.success('Full report exported!');
+    } catch (err: any) {
+      console.error('PDF failure:', err);
+      toast.error('Export failed');
     }
   };
 
-  const handleDownloadTXT = () => {
-    const outlineText = documentOutline
-      .map(s => `## ${s.heading}\n${s.bullets.map(b => `  • ${b}`).join('\n')}`)
-      .join('\n\n');
-    const content = `${docTitle}\n\nKey Points:\n${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nDocument Outline:\n${outlineText}`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${docTitle}-summary.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('TXT downloaded!');
-  };
+  const handleDownloadModulePDF = async () => {
+    try {
+      toast.info(`Preparing ${activeTab} report...`);
 
-  const handleDownloadPDF = () => {
-    // Hidden style tag to ensure toast and other UI are hidden during print
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @media print {
-        [data-sonner-toaster] { display: none !important; }
-        .print\\:hidden { display: none !important; }
+      const element = document.createElement('div');
+      element.style.padding = '40px';
+      element.style.background = '#030712';
+      element.style.color = '#f8fafc';
+      element.style.fontFamily = 'Inter, sans-serif';
+
+      let html = `
+        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
+          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
+          <p style="font-size: 14px; color: #94a3b8; margin: 0; text-transform: uppercase;">MODULE: <span style="color: #60a5fa; font-weight: bold;">${activeTab}</span> | ${docTitle}</p>
+        </div>
+      `;
+
+      if (activeTab === 'text') {
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              ${keyPoints.map((p: string, idx: number) => `
+                <div style="display: flex; align-items: center; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px;">
+                  <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">${idx + 1}</div>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (activeTab === 'outline') {
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">outline</h2>
+            ${documentOutline.map((s, idx) => `
+              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; background: #020617; page-break-inside: avoid;">
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 14px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 15px;">
+                  <div style="width: 24px; height: 24px; background: #10b981; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">${idx + 1}</div>
+                  <h3 style="font-size: 16px; font-weight: bold; color: #f8fafc; margin: 0;">${s.heading}</h3>
+                </div>
+                <div style="padding: 18px;">
+                  <div style="margin-bottom: 15px;">
+                    ${(s.bullets || []).map(b => `<p style="margin: 0 0 8px; color: #94a3b8; font-size: 14px; display: flex; align-items: flex-start;"><span style="color:#10b981; margin-right: 10px;">•</span> ${b}</p>`).join('')}
+                  </div>
+                  ${(s.subSections || []).map(sub => `
+                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 2px solid #1e293b;">
+                      <h4 style="font-size: 14px; font-weight: bold; color: #10b981; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                         ${sub.title}
+                      </h4>
+                      <div style="padding-left: 12px;">
+                        ${(sub.bullets || []).map(sb => `<p style="margin: 0 0 5px; color: #64748b; font-size: 13px;">— ${sb}</p>`).join('')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (activeTab === 'infographic') {
+        const infographicData = summary.content?.infographic || summary.content?.infographicData;
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600;">infographic (hub,steps , orbit , flow)</h2>
+            
+            ${infographicData?.sections ? `
+              <!-- Knowledge Hub (HUB) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #818cf8; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #818cf8; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #818cf8;"></span>
+                  Knowledge Hub
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  ${infographicData.sections.slice(0, 6).map((sec: any) => `
+                    <div style="background: #020617; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; border-top: 3px solid #818cf8;">
+                      <span style="font-size: 11px; font-weight: bold; color: #c7d2fe; text-transform: uppercase;">${sec.title}</span>
+                      <p style="font-size: 13px; color: #94a3b8; margin-top: 10px;">${sec.points ? sec.points[0] : ''}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Sequential Process Flow (STEPS) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #10b981; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #10b981;"></span>
+                  Sequential Steps
+                </p>
+                <div style="background: #020617; padding: 20px; border-radius: 15px; border: 1px solid #1e293b; border-left: 4px solid #10b981;">
+                  ${infographicData.sections.slice(0, 5).map((sec: any, idx: number) => `
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; ${idx < 4 ? 'border-bottom: 1px solid #1e293b;' : ''}">
+                      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                         <div style="width: 20px; height: 20px; background: #10b981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${idx + 1}</div>
+                         <span style="font-weight: 700; color: #f8fafc; font-size: 14px;">${sec.title}</span>
+                      </div>
+                      <p style="font-size: 12px; color: #94a3b8; margin-left: 32px;">${sec.points ? sec.points.join(', ') : ''}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Conceptual Orbit (ORBIT) -->
+              <div style="margin-bottom: 35px; page-break-inside: avoid;">
+                <p style="font-weight: bold; font-size: 15px; color: #22d3ee; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="width: 8px; height: 8px; background: #22d3ee; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #22d3ee;"></span>
+                  Conceptual Orbit
+                </p>
+                <div style="background: #000000; border: 2px dashed #22d3ee; padding: 30px; border-radius: 100px; text-align: center;">
+                  <p style="font-size: 14px; color: #e0f2fe; margin-bottom: 8px; font-weight: bold;">Core Focus:</p>
+                  <p style="font-size: 16px; color: #22d3ee; margin: 0; font-weight: 800; text-transform: uppercase;">${docTitle}</p>
+                  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px;">
+                    ${infographicData.sections.slice(0, 4).map((sec: any) => `
+                      <span style="background: rgba(34, 211, 238, 0.1); border: 1px solid #22d3ee; color: #22d3ee; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold;">${sec.title}</span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Logical Interaction Flow (FLOW) -->
+              ${infographicData.logicalFlow ? `
+                <div style="margin-bottom: 10px; page-break-inside: avoid;">
+                  <p style="font-weight: bold; font-size: 15px; color: #fb923c; margin-bottom: 15px; display: flex; align-items: center;">
+                    <span style="width: 8px; height: 8px; background: #fb923c; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #fb923c;"></span>
+                    Logical Interaction Flow
+                  </p>
+                  <div style="background: #020617; border: 1px solid #1e293b; padding: 25px; border-radius: 15px; border-style: dashed; border-color: #334155;">
+                    ${infographicData.logicalFlow.slice(0, 4).map((f: any) => `
+                      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <span style="background: #0f172a; border: 1px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.from}</span>
+                        <span style="margin: 0 18px; color: #fb923c; font-weight: bold;">➔</span>
+                        <span style="background: #0f172a; border: 1px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.to}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            ` : ''}
+          </div>
+        `;
+      } else if (activeTab === 'mindmap') {
+        const mindmapData = summary.content?.mindMap || summary.content?.mindMapData;
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+             <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600;">mindmap</h2>
+             <div style="background: #020617; padding: 25px; border-radius: 12px; border-right: 8px solid #7c3aed;">
+                <p style="color: #e0e7ff;">Captured neural network with ${mindmapData?.nodes?.length || 0} primary semantic nodes.</p>
+             </div>
+          </div>
+        `;
+      } else if (activeTab === 'flashcards') {
+        const flashcards = summary.content?.flashcards || [];
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600;">flashcards</h2>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+              ${flashcards.map((f: any) => `
+                <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899;">
+                  <p style="font-weight: 700; color: #fdf2f8;">Q: ${f.question}</p>
+                  <p style="color: #fbcfe8; font-size: 14px; margin-top: 10px;">Ans: ${f.answer}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (activeTab === 'table') {
+        const tables = summary.content?.comparativeTable || [];
+        html += `
+          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600;">comparision</h2>
+            ${tables.map((table: any) => `
+              <div style="background: #020617; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1;">
+                  <thead><tr style="background: #1e293b;">
+                    ${(table.headers || []).map((h: string) => `<th style="padding: 10px; text-align: left; border: 1px solid #1e293b;">${h}</th>`).join('')}
+                  </tr></thead>
+                  <tbody>
+                    ${(table.rows || []).map((row: any) => `
+                      <tr>${(Array.isArray(row) ? row : Object.values(row)).map(cell => `<td style="padding: 10px; border: 1px solid #1e293b;">${cell}</td>`).join('')}</tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `).join('')}
+          </div>
+        `;
       }
-    `;
-    document.head.appendChild(style);
 
-    window.print();
+      element.innerHTML = html;
+      const opt: any = {
+        margin: 10,
+        filename: `${docTitle}_${activeTab}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: ['infographic', 'mindmap', 'table'].includes(activeTab) ? 'landscape' : 'portrait'
+        }
+      };
 
-    // Clean up after print dialog is closed
-    setTimeout(() => {
-      document.head.removeChild(style);
-    }, 1000);
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      await html2pdf().set(opt).from(element).save();
+      toast.success(`${activeTab} report exported!`);
+    } catch (err: any) {
+      console.error('Partial PDF failure:', err);
+      toast.error('Export failed');
+    }
   };
 
   const handleShare = async () => {
@@ -218,20 +626,23 @@ export default function SummaryViewer({
       }
     }
   };
+
   const handleRegenerate = async () => {
     if (!summaryId) return;
     try {
       setLoading(true);
-      toast.info('Regenerating with smarter exhaustive logic...');
+      toast.info('Regenerating...');
       const { data } = await api.post(`/summaries/${summaryId}/regenerate`);
       setSummary(data);
-      toast.success('Summary regenerated successfully!');
+      toast.success('Regenerated!');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Regeneration failed');
+      toast.error('Regeneration failed');
     } finally {
       setLoading(false);
     }
   };
+
+
 
   // ── Tab config ────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; short: string; icon: React.ReactNode; activeBg: string; iconBg: string; iconColor: string }[] = [
@@ -253,13 +664,14 @@ export default function SummaryViewer({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span
-                className="text-[28px] font-semibold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] bg-clip-text text-transparent bg-gradient-to-r"
-                style={{
-                  backgroundImage: 'linear-gradient(to right, #082677 4%, #2B7FFF 13%, #2B7FFF 34%, #082677 43%, #2B7FFF 50%, #2B7FFF 80%, #082677 92%, #2B7FFF 100%)'
-                }}
-              >
-                OmniStudy AI
+              <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+                <span style={{ color: '#1d51df' }}>O</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
+                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
+                <span className="inline-block w-2"></span>
+                <span style={{ color: '#1d51df' }}>A</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
             </div>
           </div>
@@ -281,12 +693,21 @@ export default function SummaryViewer({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleCopy}><Copy className="h-4 w-4 mr-2" />Copy</Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadPDF}><Download className="h-4 w-4 mr-2" />PDF</Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadTXT}><Download className="h-4 w-4 mr-2" />TXT</Button>
-              <Button variant="outline" size="sm" onClick={handleShare}><Share2 className="h-4 w-4 mr-2" />Share</Button>
-              <Button variant="outline" size="sm" onClick={handleRegenerate} className="border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950">
-                <RefreshCw className="h-4 w-4 mr-2" />Regenerate
+              <Button variant="outline" size="sm" onClick={handleDownloadModulePDF} className="gap-2">
+                <Download className="h-4 w-4" />
+                PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleRegenerate} className="border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Regenerate
               </Button>
             </div>
           </div>
@@ -316,7 +737,7 @@ export default function SummaryViewer({
           </div>
 
           {/* ── Text View (Key Points Only) ──────────── */}
-          <div className={activeTab === 'text' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-text" className={activeTab === 'text' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <Card>
               <CardHeader><CardTitle>Key Points</CardTitle></CardHeader>
               <CardContent>
@@ -343,7 +764,7 @@ export default function SummaryViewer({
           </div>
 
           {/* ── Document Outline View ─────────────────────────────── */}
-          <div className={activeTab === 'outline' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-outline" className={activeTab === 'outline' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -411,22 +832,22 @@ export default function SummaryViewer({
           </div>
 
           {/* ── Mind Map ──────────────────────────────────────────────── */}
-          <div className={activeTab === 'mindmap' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-mindmap" className={activeTab === 'mindmap' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <MindMapViewer title={docTitle} data={summary.content?.mindMapData} />
           </div>
 
           {/* ── Infographic ───────────────────────────────────────────── */}
-          <div className={activeTab === 'infographic' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-infographic" className={activeTab === 'infographic' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <InfographicViewer title={docTitle} data={summary.content?.infographicData} />
           </div>
 
           {/* ── Flashcards ────────────────────────────────────────────── */}
-          <div className={activeTab === 'flashcards' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-flashcards" className={activeTab === 'flashcards' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <FlashcardsViewer title={docTitle} data={summary.content?.flashcards} />
           </div>
 
           {/* ── Comparative Table ─────────────────────────────────────── */}
-          <div className={activeTab === 'table' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
+          <div id="export-table" className={activeTab === 'table' ? 'block' : 'hidden mb-12 break-inside-avoid'}>
             <ComparativeTableViewer title={docTitle} data={summary.content?.comparativeTable} />
           </div>
         </div>

@@ -80,6 +80,7 @@ export default function App() {
         localStorage.removeItem('userInfo');
       }
     }
+    console.log('[OmniStudy] Initializing application...');
     setAuthReady(true); // ← must fire regardless of whether user is logged in
   }, []);
 

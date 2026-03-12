@@ -528,14 +528,6 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
             <p className="text-[11px] text-slate-500">Interactive visualization for {displayTitle}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl font-bold text-xs uppercase tracking-wider">
-            <Share2 className="h-4 w-4 mr-2" /> Share
-          </Button>
-          <Button variant="default" size="sm" className="h-10 px-6 rounded-xl font-bold text-xs uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700">
-            <Download className="h-4 w-4 mr-2" /> Export
-          </Button>
-        </div>
       </div>
     </Card>
   );

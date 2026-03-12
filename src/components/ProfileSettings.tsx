@@ -86,13 +86,14 @@ export default function ProfileSettings({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span
-                className="text-[28px] font-semibold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] bg-clip-text text-transparent bg-gradient-to-r"
-                style={{
-                  backgroundImage: 'linear-gradient(to right, #082677 4%, #2B7FFF 13%, #2B7FFF 34%, #082677 43%, #2B7FFF 50%, #2B7FFF 80%, #082677 92%, #2B7FFF 100%)'
-                }}
-              >
-                OmniStudy AI
+              <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+                <span style={{ color: '#1d51df' }}>O</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
+                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
+                <span className="inline-block w-2"></span>
+                <span style={{ color: '#1d51df' }}>A</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
             </div>
           </div>
