@@ -195,7 +195,7 @@ export default function UploadScreen({
           <Card
             className={`border-2 transition-all ${isDragging
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-              : 'border-dashed border-gray-300 dark:border-gray-700'
+              : 'border-dashed border-gray-300 dark:border-gray-700 dark:bg-black'
               }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

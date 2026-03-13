@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut, Maximize2, Network, Layers, Presentation } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Network, Layers, Presentation, Download } from 'lucide-react';
+import * as htmlToImage from 'html-to-image';
 
 interface MindMapNode {
   id?: string;
@@ -15,6 +16,7 @@ interface MindMapNode {
 interface MindMapViewerProps {
   title: string;
   data?: MindMapNode | { title?: string; nodes?: MindMapNode[] };
+  theme?: 'light' | 'dark';
 }
 
 const COLORS = [
@@ -34,10 +36,12 @@ interface SingleMindMapProps {
   title: string;
   data: any;
   defaultZoom?: number;
+  theme?: 'light' | 'dark';
 }
 
-function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
+function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: SingleMindMapProps) {
   const [zoom, setZoom] = useState(defaultZoom);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   // Normalize data between the old format and the new explicit prompt format
   const displayTitle = (data as any)?.title || (data as any)?.label || title;
@@ -46,6 +50,30 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
     if (!Array.isArray(rawNodes)) rawNodes = [];
     return rawNodes;
   }, [data]);
+
+  const handleDownloadImage = async () => {
+    if (!mapRef.current) return;
+    try {
+      const dataUrl = await htmlToImage.toPng(mapRef.current, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          padding: '20px', // Add buffer padding to prevent edge clipping
+        },
+        fontEmbedCSS: '', // Reduce issues with fonts
+        cacheBust: true,
+      });
+      const link = document.createElement('a');
+      link.download = `MindMap_${displayTitle.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to download image', err);
+    }
+  };
 
   const W = 1400;
   const H = Math.max(900, nodes.length * 120);
@@ -74,6 +102,16 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
           </div>
         </div>
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-3 rounded-xl gap-2 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
+            onClick={handleDownloadImage}
+          >
+            <Download className="h-3.5 w-3.5 text-indigo-500" />
+            Save Image
+          </Button>
+
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.max(40, z - 10))}>
             <ZoomOut className="h-4 w-4 text-slate-600" />
           </Button>
@@ -88,12 +126,14 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
       </CardHeader>
 
       <CardContent className="p-0 bg-[#f8fafc] dark:bg-slate-950 relative overflow-auto custom-scrollbar flex items-center justify-center min-h-[600px]">
-        {/* Decorative Grid */}
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.1] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 2px, transparent 2px)', backgroundSize: '40px 40px' }} />
-
-        <div className="transform-origin-center transition-transform duration-300" style={{ transform: `scale(${zoom / 100})`, width: W, height: H }}>
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full drop-shadow-sm">
+        <div ref={mapRef} data-mindmap-content="true" className="transform-origin-center transition-transform duration-300" style={{ transform: `scale(${zoom / 100})`, width: W, height: H }}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full drop-shadow-sm relative z-10">
             <defs>
+              {/* Dot Grid Pattern */}
+              <pattern id="dotGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <circle cx="2" cy="2" r="2" fill="#6366f1" fillOpacity={theme === 'dark' ? '0.1' : '0.05'} />
+              </pattern>
+
               <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
               </marker>
@@ -101,7 +141,26 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
                 <feGaussianBlur stdDeviation="6" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
+
+              {/* Markers for colored arrowheads */}
+              {nodes.map((_node: MindMapNode, i: number) => (
+                <marker
+                  key={`arrow-${i}`}
+                  id={`arrow-${i}`}
+                  viewBox="0 0 10 10"
+                  refX="8"
+                  refY="5"
+                  markerWidth="5"
+                  markerHeight="5"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill={COLORS[i % COLORS.length]} />
+                </marker>
+              ))}
             </defs>
+
+            {/* Background Dot Grid for Export */}
+            <rect width={W} height={H} fill="url(#dotGrid)" />
 
             {/* Render Left Connections */}
             {leftNodes.map((node: MindMapNode, i: number) => {
@@ -121,7 +180,7 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
                   stroke={color}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  markerEnd="url(#arrowHead)"
+                  markerEnd={`url(#arrow-${i})`}
                   className="transition-all duration-300 opacity-90"
                 />
               );
@@ -146,7 +205,7 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
                   stroke={color}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  markerEnd="url(#arrowHead)"
+                  markerEnd={`url(#arrow-${globalIdx})`}
                   className="transition-all duration-300 opacity-90"
                 />
               );
@@ -162,24 +221,82 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
               const bullets = node.children || node.nodes || [];
 
               return (
-                <foreignObject key={`left-box-${i}`} x={100} y={nodeY - boxH / 2} width={boxW} height={boxH}>
-                  <div className="w-full h-full bg-white dark:bg-slate-900 border-4 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg transition-transform hover:-translate-y-1 relative" style={{ borderColor: color }}>
-                    <div className="absolute top-0 right-8 px-4 py-1.5 rounded-b-xl text-white font-black text-xs uppercase" style={{ backgroundColor: color }}>
+                <foreignObject key={`left-box-${i}`} x={100 - 20} y={nodeY - boxH / 2 - 20} width={boxW + 40} height={boxH + 40}>
+                  <div
+                    className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
+                    style={{
+                      backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+                      border: `4px solid ${color}`,
+                      borderRadius: '1.5rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '32px 24px 24px 24px',
+                      boxSizing: 'border-box',
+                      width: `${boxW}px`,
+                      height: `${boxH}px`,
+                      margin: '20px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        right: '32px',
+                        padding: '6px 16px',
+                        backgroundColor: color,
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: '10px',
+                        borderBottomLeftRadius: '12px',
+                        borderBottomRightRadius: '12px',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    >
                       0{i + 1}. SECTION
                     </div>
-                    <div className="flex w-full items-center gap-4 mb-3">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0" style={{ backgroundColor: color + '15' }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', width: '100%' }}>
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '16px',
+                          backgroundColor: color + '20',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '32px',
+                          flexShrink: 0
+                        }}
+                      >
                         {emoji}
                       </div>
-                      <h3 className="font-black text-[14px] leading-tight text-slate-800 dark:text-white uppercase line-clamp-2">
+                      <h3
+                        className={theme === 'dark' ? 'text-white' : 'text-slate-800'}
+                        style={{
+                          fontSize: '18px',
+                          fontWeight: '900',
+                          textTransform: 'uppercase',
+                          lineHeight: '1.2',
+                          margin: 0,
+                          flex: 1
+                        }}
+                      >
                         {label}
                       </h3>
                     </div>
-                    <div className="w-full space-y-1.5 px-1">
+
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {bullets.slice(0, 3).map((b: any, bi: number) => (
-                        <div key={bi} className="flex gap-2 items-start">
-                          <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 line-clamp-1 leading-tight">{b.name || b.label}</span>
+                        <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
+                          <span
+                            className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}
+                            style={{ fontSize: '12px', fontWeight: '700', lineHeight: '1.3' }}
+                          >
+                            {b.name || b.label}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -199,24 +316,82 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
               const bullets = node.children || node.nodes || [];
 
               return (
-                <foreignObject key={`right-box-${i}`} x={W - 100 - boxW} y={nodeY - boxH / 2} width={boxW} height={boxH}>
-                  <div className="w-full h-full bg-white dark:bg-slate-900 border-4 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg transition-transform hover:-translate-y-1 relative" style={{ borderColor: color }}>
-                    <div className="absolute top-0 left-8 px-4 py-1.5 rounded-b-xl text-white font-black text-xs uppercase" style={{ backgroundColor: color }}>
+                <foreignObject key={`right-box-${i}`} x={W - 100 - boxW - 20} y={nodeY - boxH / 2 - 20} width={boxW + 40} height={boxH + 40}>
+                  <div
+                    className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
+                    style={{
+                      backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+                      border: `4px solid ${color}`,
+                      borderRadius: '1.5rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '32px 24px 24px 24px',
+                      boxSizing: 'border-box',
+                      width: `${boxW}px`,
+                      height: `${boxH}px`,
+                      margin: '20px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '32px',
+                        padding: '6px 16px',
+                        backgroundColor: color,
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: '10px',
+                        borderBottomLeftRadius: '12px',
+                        borderBottomRightRadius: '12px',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    >
                       0{globalIdx + 1}. SECTION
                     </div>
-                    <div className="flex w-full items-center gap-4 mb-3">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0" style={{ backgroundColor: color + '15' }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', width: '100%' }}>
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '16px',
+                          backgroundColor: color + '20',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '32px',
+                          flexShrink: 0
+                        }}
+                      >
                         {emoji}
                       </div>
-                      <h3 className="font-black text-[14px] leading-tight text-slate-800 dark:text-white uppercase line-clamp-2">
+                      <h3
+                        className={theme === 'dark' ? 'text-white' : 'text-slate-800'}
+                        style={{
+                          fontSize: '18px',
+                          fontWeight: '900',
+                          textTransform: 'uppercase',
+                          lineHeight: '1.2',
+                          margin: 0,
+                          flex: 1
+                        }}
+                      >
                         {label}
                       </h3>
                     </div>
-                    <div className="w-full space-y-1.5 px-1">
+
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {bullets.slice(0, 3).map((b: any, bi: number) => (
-                        <div key={bi} className="flex gap-2 items-start">
-                          <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 line-clamp-1 leading-tight">{b.name || b.label}</span>
+                        <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
+                          <span
+                            className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}
+                            style={{ fontSize: '12px', fontWeight: '700', lineHeight: '1.3' }}
+                          >
+                            {b.name || b.label}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -226,16 +401,53 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
             })}
 
             {/* Render Center Node */}
-            <foreignObject x={cx - centerRadius - 20} y={cy - centerRadius - 20} width={(centerRadius + 20) * 2} height={(centerRadius + 20) * 2}>
-              <div className="w-full h-full flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-[12px] border-indigo-500 relative z-50">
+            <foreignObject x={cx - centerRadius - 40} y={cy - centerRadius - 40} width={(centerRadius + 40) * 2} height={(centerRadius + 40) * 2}>
+              <div
+                className="flex flex-col items-center justify-center rounded-full shadow-2xl relative z-50 overflow-hidden"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                  border: '12px solid #6366f1',
+                  borderRadius: '1000px',
+                  width: `${(centerRadius + 20) * 2}px`,
+                  height: `${(centerRadius + 20) * 2}px`,
+                  margin: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxSizing: 'border-box'
+                }}
+              >
                 <div className="absolute inset-2 rounded-full border border-indigo-100 dark:border-indigo-900 border-dashed animate-[spin_30s_linear_infinite]" />
-                <div className="flex flex-col items-center justify-center p-6 text-center z-10">
-                  <span className="text-[10px] font-black tracking-[0.3em] text-indigo-400 uppercase mb-2">MINDMAP</span>
-                  <span className="font-black text-2xl text-slate-800 dark:text-white uppercase tracking-tighter leading-tight line-clamp-3">
-                    {displayTitle}
-                  </span>
-                  <div className="flex gap-1.5 mt-4">
-                    {COLORS.slice(0, 5).map(c => <span key={c} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c }} />)}
+                <div
+                  className="relative z-10 w-full"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+                >
+                  <div style={{ marginBottom: '12px', width: '100%' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.4em', color: '#818cf8', textTransform: 'uppercase', display: 'block' }}>MINDMAP</span>
+                  </div>
+                  <div style={{ width: '100%' }}>
+                    <div
+                      className={theme === 'dark' ? 'text-white' : 'text-slate-800'}
+                      style={{
+                        fontSize: '28px',
+                        fontWeight: '900',
+                        textTransform: 'uppercase',
+                        letterSpacing: '-0.02em',
+                        lineHeight: '1.2',
+                        wordWrap: 'break-word',
+                        display: 'block',
+                        maxWidth: '220px',
+                        margin: '0 auto',
+                        maxHeight: '100px',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {displayTitle}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'center' }}>
+                    {COLORS.slice(0, 5).map(c => <div key={c} style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: c }} />)}
                   </div>
                 </div>
               </div>
@@ -248,7 +460,7 @@ function SingleMindMap({ title, data, defaultZoom = 100 }: SingleMindMapProps) {
   );
 }
 
-export default function MindMapViewer({ title, data }: MindMapViewerProps) {
+export default function MindMapViewer({ title, data, theme }: MindMapViewerProps) {
   const maps = Array.isArray(data) ? data : [data];
 
   if (!data || maps.length === 0) {
@@ -261,9 +473,9 @@ export default function MindMapViewer({ title, data }: MindMapViewerProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${theme === 'dark' ? 'dark' : ''}`}>
       {maps.map((mapData, i) => (
-        <SingleMindMap key={i} title={mapData?.title || title} data={mapData} />
+        <SingleMindMap key={i} title={mapData?.title || title} data={mapData} theme={theme} />
       ))}
     </div>
   );

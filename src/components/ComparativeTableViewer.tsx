@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
-import { Table } from 'lucide-react';
+import { Button } from './ui/button';
+import { Table, Download } from 'lucide-react';
+import * as htmlToImage from 'html-to-image';
+import { toast } from 'sonner';
 
 interface ComparisonTable {
   title: string;
@@ -11,6 +14,7 @@ interface ComparisonTable {
 interface ComparativeTableViewerProps {
   title: string;
   data?: any[];
+  theme?: 'light' | 'dark';
 }
 
 const ROW_COLORS = [
@@ -24,7 +28,28 @@ const ROW_COLORS = [
   'border-l-amber-500',
 ];
 
-export default function ComparativeTableViewer({ title, data }: ComparativeTableViewerProps) {
+export default function ComparativeTableViewer({ title, data, theme = 'dark' }: ComparativeTableViewerProps) {
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadImage = async () => {
+    if (!tableRef.current) return;
+    try {
+      const dataUrl = await htmlToImage.toPng(tableRef.current, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+      });
+      const link = document.createElement('a');
+      link.download = `Comparison_${title.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success('Image saved!');
+    } catch (err) {
+      console.error('Save image failed:', err);
+      toast.error('Failed to save image');
+    }
+  };
+
   let tables: ComparisonTable[] = [];
   if (data && data.length > 0) {
     if (data[0] && 'concept' in data[0]) {
@@ -58,71 +83,92 @@ export default function ComparativeTableViewer({ title, data }: ComparativeTable
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Table className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            Comparative Analysis
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              — {tables.length} table{tables.length !== 1 ? 's' : ''}
-            </span>
-          </CardTitle>
+          <div>
+            <CardTitle className="flex items-center gap-2 text-2xl font-black">
+              <Table className="h-6 w-6 text-blue-500" />
+              Comparative Analysis
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                — {tables.length} table{tables.length !== 1 ? 's' : ''}
+              </span>
+            </CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Side-by-side breakdown of every key section in{' '}
+              <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span>
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadImage}
+            className="rounded-xl gap-2 border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-950"
+          >
+            <Download className="h-4 w-4" />
+            Save Image
+          </Button>
         </div>
-
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Side-by-side breakdown of every key section in{' '}
-          <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span>
-        </p>
       </CardHeader>
 
       <CardContent className="px-0">
         <ScrollArea className="h-[650px] w-full pr-4">
-          <div className="space-y-8 pb-8">
-            {tables.map((table, tIdx) => (
-              <Card key={tIdx} className="overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950">
-                <CardHeader className="bg-gray-50/50 dark:bg-gray-900/50 py-4">
-                  <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    {table.title}
-                  </CardTitle>
-                </CardHeader>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse min-w-[600px]">
-                    <thead>
-                      <tr className="bg-gray-100/50 dark:bg-gray-900 text-left border-y border-gray-200 dark:border-gray-800">
-                        <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 w-12 text-center">#</th>
-                        {table.headers.map((h, i) => (
-                          <th key={i} className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                      {table.rows.map((row, rIdx) => (
-                        <tr
-                          key={rIdx}
-                          className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group"
-                        >
-                          <td className="px-4 py-4 text-gray-400 dark:text-gray-500 font-mono text-xs text-center border-l-4 border-transparent group-hover:border-blue-500">
-                            {rIdx + 1}
-                          </td>
-                          {row.map((cell, cIdx) => (
-                            <td key={cIdx} className={`px-4 py-4 text-gray-700 dark:text-gray-300 align-top leading-relaxed ${cIdx === 0 ? 'font-semibold text-blue-700 dark:text-blue-400' : ''}`}>
-                              {cell}
-                            </td>
+          <div ref={tableRef} className={`space-y-8 pb-8 p-8 relative ${theme === 'dark' ? 'dark' : ''}`} style={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff' }}>
+            {/* Background Grid Pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"
+              style={{
+                backgroundImage: 'radial-gradient(#6366f1 2px, transparent 2px)',
+                backgroundSize: '40px 40px'
+              }}
+            />
+
+            <div className="relative z-10 space-y-8">
+              {tables.map((table, tIdx) => (
+                <Card key={tIdx} className="overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950">
+                  <CardHeader className="bg-gray-50/50 dark:bg-gray-900/50 py-4">
+                    <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                      {table.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse min-w-[600px]">
+                      <thead>
+                        <tr className="bg-gray-100/50 dark:bg-gray-900 text-left border-y border-gray-200 dark:border-gray-800">
+                          <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 w-12 text-center">#</th>
+                          {table.headers.map((h, i) => (
+                            <th key={i} className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                              {h}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            ))}
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {table.rows.map((row, rIdx) => (
+                          <tr
+                            key={rIdx}
+                            className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group"
+                          >
+                            <td className="px-4 py-4 text-gray-400 dark:text-gray-500 font-mono text-xs text-center border-l-4 border-transparent group-hover:border-blue-500">
+                              {rIdx + 1}
+                            </td>
+                            {row.map((cell, cIdx) => (
+                              <td key={cIdx} className={`px-4 py-4 text-gray-700 dark:text-gray-300 align-top leading-relaxed ${cIdx === 0 ? 'font-semibold text-blue-700 dark:text-blue-400' : ''}`}>
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              ))}
 
-            {tables.length === 0 && (
-              <div className="text-center py-16 text-gray-400 dark:text-gray-600">
-                <Table className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No matching elements found.</p>
-              </div>
-            )}
+              {tables.length === 0 && (
+                <div className="text-center py-16 text-gray-400 dark:text-gray-600">
+                  <Table className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No matching elements found.</p>
+                </div>
+              )}
+            </div>
           </div>
         </ScrollArea>
       </CardContent>

@@ -86,21 +86,22 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
     onError: () => toast.error('Google Login Failed'),
   });
 
-  const handleFacebookLogin = () => {
-    onLogin('Alex');
-  };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       {/* Auth Card */}
       <div className="w-full max-w-lg border-2 border-blue-500/30 rounded-3xl bg-slate-900 p-12">
         {/* Logo */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl">
-            <span className="text-blue-500">Omni</span>
-            <span className="text-gray-400">Study</span>
-            <span className="text-blue-500"> AI</span>
-          </h1>
+        <div className="flex justify-center mb-12">
+          <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+            <span style={{ color: '#1d51df' }}>O</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
+            <span style={{ color: '#1d51df' }} className="ml-1">S</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
+            <span className="inline-block w-2"></span>
+            <span style={{ color: '#1d51df' }}>A</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+          </span>
         </div>
 
         {/* LOGIN FORM */}
@@ -275,17 +276,6 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
             Continue with Google
           </Button>
 
-          {/* Facebook Login */}
-          <Button
-            type="button"
-            onClick={handleFacebookLogin}
-            className="w-full bg-white hover:bg-gray-100 text-gray-800 rounded-full py-6 text-base font-medium flex items-center justify-center gap-3 transition-all"
-          >
-            <svg className="h-5 w-5" fill="#1877F2" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-            Continue with Facebook
-          </Button>
         </div>
       </div>
     </div>

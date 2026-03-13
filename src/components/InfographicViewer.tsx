@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ImageIcon, Share2, Download, Maximize2, Layers, GitBranch, LayoutGrid, ZoomIn, ZoomOut } from 'lucide-react';
+import * as htmlToImage from 'html-to-image';
 
 interface InfographicSection {
   title: string;
@@ -18,6 +19,8 @@ interface InfographicData {
 interface InfographicViewerProps {
   title: string;
   data?: InfographicData;
+  theme?: 'light' | 'dark';
+  forcedViewMode?: 'hub' | 'flow' | 'circular' | 'flowchart';
 }
 
 const THEME_COLORS = [
@@ -29,10 +32,33 @@ const THEME_COLORS = [
   { main: '#ec4899', light: 'rgba(236, 72, 153, 0.1)', border: '#f472b6' }, // Pink
 ];
 
-export default function InfographicViewer({ title, data }: InfographicViewerProps) {
-  const [viewMode, setViewMode] = useState<'hub' | 'flow' | 'circular' | 'flowchart'>('hub');
+export default function InfographicViewer({ title, data, theme = 'dark', forcedViewMode }: InfographicViewerProps) {
+  const [internalViewMode, setViewMode] = useState<'hub' | 'flow' | 'circular' | 'flowchart'>('hub');
+  const viewMode = forcedViewMode || internalViewMode;
   const [zoom, setZoom] = useState(100);
+  const infoRef = useRef<HTMLDivElement>(null);
   const displayTitle = data?.title || title;
+
+  const handleDownloadImage = async () => {
+    if (!infoRef.current) return;
+    try {
+      const dataUrl = await htmlToImage.toPng(infoRef.current, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        },
+      });
+      const link = document.createElement('a');
+      link.download = `Infographic_${viewMode}_${displayTitle.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to download image', err);
+    }
+  };
 
   const sections = useMemo(() => {
     return data?.sections && data.sections.length > 0
@@ -338,9 +364,9 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
               const typeIndex = i % 3;
 
               return (
-                <div key={i} className="relative flex flex-col items-center w-full max-w-lg">
+                <div key={i} className="relative flex flex-col items-center w-full max-w-[240px]">
                   {/* Node */}
-                  <div className={`relative w-[280px] sm:w-[320px] h-full flex group transition-all duration-300 hover:-translate-y-1`}>
+                  <div className={`relative w-full h-full flex group transition-all duration-300 hover:-translate-y-1`}>
 
                     {typeIndex === 0 && ( /* External Entity Style */
                       <div className={`w-full h-full bg-white dark:bg-slate-900 border-2 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col p-5 ring-4
@@ -353,12 +379,12 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
                             {section.metadata?.complexity || 'MED'}
                           </span>
                         </div>
-                        <span className="font-black text-base sm:text-lg tracking-tight text-slate-800 dark:text-slate-100 uppercase mb-3">{section.title}</span>
+                        <span className="font-black text-[12px] tracking-tight text-slate-800 dark:text-slate-100 uppercase mb-3 text-center">{section.title}</span>
                         <ul className="space-y-2">
                           {section.points.slice(0, 5).map((p, pi) => (
                             <li key={pi} className="flex gap-2 items-start">
                               <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />
-                              <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed">{p}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed">{p}</p>
                             </li>
                           ))}
                         </ul>
@@ -372,10 +398,10 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
                           <span className="text-[13px] font-black text-teal-600/50">{String(i + 1).padStart(2, '0')}</span>
                         </div>
                         <div className="p-5 flex flex-col items-center">
-                          <span className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
+                          <span className="font-black text-[14px] sm:text-[15px] uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="w-full space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
-                              <div key={pi} className="text-[13px] text-teal-700/70 dark:text-teal-400/70 font-bold bg-teal-500/5 dark:bg-teal-400/5 px-3 py-2 rounded border border-teal-100 dark:border-teal-900/30">
+                              <div key={pi} className="text-[10px] text-teal-700/70 dark:text-teal-400/70 font-bold bg-teal-500/5 dark:bg-teal-400/5 px-3 py-2 rounded border border-teal-100 dark:border-teal-900/30">
                                 {p}
                               </div>
                             ))}
@@ -392,10 +418,10 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
                         </div>
                         <div className="flex-1 flex flex-col p-5">
                           <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest mb-1 text-center">{section.type || 'STORE'}</span>
-                          <span className="font-black text-base uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
+                          <span className="font-black text-[14px] sm:text-[15px] uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
-                              <p key={pi} className="text-[13px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-3">
+                              <p key={pi} className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-3">
                                 {p}
                               </p>
                             ))}
@@ -485,6 +511,16 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
           </div>
 
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 rounded-xl gap-2 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
+              onClick={handleDownloadImage}
+            >
+              <Download className="h-3.5 w-3.5 text-indigo-500" />
+              Save Image
+            </Button>
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.max(40, z - 10))}>
               <ZoomOut className="h-4 w-4 text-slate-600" />
             </Button>
@@ -499,12 +535,15 @@ export default function InfographicViewer({ title, data }: InfographicViewerProp
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10">
+      <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10`}>
         <div
           className="min-w-full min-h-full flex items-start justify-center py-20"
         >
           <div
-            className="transition-transform duration-300 relative"
+            ref={infoRef}
+            data-infographic-content="true"
+            data-infographic-view={viewMode}
+            className="transition-transform duration-300 relative bg-white dark:bg-slate-900"
             style={{
               transform: `scale(${zoom / 100})`,
               transformOrigin: 'center top'
