@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ZoomIn, ZoomOut, Maximize2, Network, Layers, Presentation, Download } from 'lucide-react';
@@ -42,6 +42,15 @@ interface SingleMindMapProps {
 function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: SingleMindMapProps) {
   const [zoom, setZoom] = useState(defaultZoom);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setZoom(100);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Normalize data between the old format and the new explicit prompt format
   const displayTitle = (data as any)?.title || (data as any)?.label || title;
@@ -97,7 +106,7 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
             <Presentation className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Mindmap Infographic</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">Mind Map</CardTitle>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{nodes.length} Core Topics Processed</p>
           </div>
         </div>
@@ -125,8 +134,8 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
         </div>
       </CardHeader>
 
-      <CardContent className="p-0 bg-[#f8fafc] dark:bg-slate-950 relative overflow-auto custom-scrollbar flex items-center justify-center min-h-[600px]">
-        <div ref={mapRef} data-mindmap-content="true" className="transform-origin-center transition-transform duration-300" style={{ transform: `scale(${zoom / 100})`, width: W, height: H }}>
+      <CardContent className="p-0 bg-[#f8fafc] dark:bg-slate-950 relative overflow-auto custom-scrollbar flex items-start sm:items-center sm:justify-center justify-start min-h-[600px] p-4 sm:p-0">
+        <div ref={mapRef} data-mindmap-content="true" className="transition-transform duration-300" style={{ transform: `scale(${zoom / 100})`, width: W, height: H, transformOrigin: window.innerWidth < 640 ? 'left top' : 'center center' }}>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full drop-shadow-sm relative z-10">
             <defs>
               {/* Dot Grid Pattern */}

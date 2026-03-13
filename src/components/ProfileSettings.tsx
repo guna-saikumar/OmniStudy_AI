@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Switch } from './ui/switch';
+
 import { Separator } from './ui/separator';
 import { BookOpen, ArrowLeft, CircleUser, LogOut, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ export default function ProfileSettings({
   const [name, setName] = useState(userName);
   const [email, setEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [receiveUpdates, setReceiveUpdates] = useState(true);
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -59,11 +59,19 @@ export default function ProfileSettings({
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await api.put('/users/profile', { name });
+      const { data } = await api.put('/users/profile', { name, profileImage });
       const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-      localStorage.setItem('userInfo', JSON.stringify({ ...userInfo, name: data.name, profileImage }));
+      localStorage.setItem('userInfo', JSON.stringify({
+        ...userInfo,
+        name: data.name,
+        profileImage: data.profileImage
+      }));
       onNameChange(data.name);
       toast.success('Profile updated successfully!');
+      // Return to previous page after successful save
+      setTimeout(() => {
+        onBack();
+      }, 1000);
     } catch (error) {
       toast.error('Failed to update profile');
     } finally {
@@ -79,19 +87,19 @@ export default function ProfileSettings({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Navigation */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onBack}>
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+              <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                 <span style={{ color: '#1d51df' }}>O</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
                 <span style={{ color: '#1d51df' }} className="ml-1">S</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-2"></span>
+                <span className="inline-block w-1 sm:w-2"></span>
                 <span style={{ color: '#1d51df' }}>A</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
@@ -102,7 +110,7 @@ export default function ProfileSettings({
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Profile Card */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg dark:bg-black">
           <CardHeader className="text-center pb-6">
             <div className="flex justify-center mb-4">
               <div className="relative group cursor-pointer inline-block">
@@ -192,22 +200,6 @@ export default function ProfileSettings({
                     </>
                   )}
                 </Button>
-              </div>
-
-              <Separator />
-
-              {/* Receive Updates Switch */}
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Receive Updates</Label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Get tips and feedback prompts
-                  </p>
-                </div>
-                <Switch
-                  checked={receiveUpdates}
-                  onCheckedChange={setReceiveUpdates}
-                />
               </div>
 
               <Separator />

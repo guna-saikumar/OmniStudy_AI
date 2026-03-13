@@ -41,16 +41,16 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
 
   return (
     <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="space-y-3 px-0">
+      <CardHeader className="space-y-4 px-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold uppercase">
             <SquareStack className="h-5 w-5 text-pink-500" />
             Flashcards
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 normal-case tracking-normal">
               — {cards.length} card{cards.length !== 1 ? 's' : ''}
             </span>
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={shuffle} title="Shuffle">
               <Shuffle className="h-4 w-4 mr-2" /> Shuffle
             </Button>
@@ -63,6 +63,15 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Click any card to reveal its answer. Review all generated flashcards below.
         </p>
+
+        <div className="flex sm:hidden items-center gap-2 w-full">
+          <Button variant="outline" size="sm" onClick={shuffle} className="flex-1 rounded-xl h-10">
+            <Shuffle className="h-4 w-4 mr-2" /> Shuffle
+          </Button>
+          <Button variant="outline" size="sm" onClick={reset} className="flex-1 rounded-xl h-10">
+            <RotateCcw className="h-4 w-4 mr-2" /> Reset
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className="px-0">

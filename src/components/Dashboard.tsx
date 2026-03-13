@@ -24,8 +24,10 @@ import {
   LogOut,
   Settings,
   HelpCircle,
-  ChevronDown,
   List,
+  Copy,
+  MessageCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
@@ -389,18 +391,47 @@ export default function Dashboard({
     });
   };
 
+  const handleCopyLink = (id: string) => {
+    const shareUrl = `${window.location.origin}/summary/${id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success('Link copied to clipboard!');
+  };
+
+  const handleWhatsAppShare = (item: any) => {
+    const shareUrl = `${window.location.origin}/summary/${item._id}`;
+    const text = encodeURIComponent(`Check out this document summary for "${item.fileName}" on OmniStudy AI: ${shareUrl}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handleSystemShare = async (item: any) => {
+    const shareUrl = `${window.location.origin}/summary/${item._id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: item.fileName,
+          text: `Check out this document summary for "${item.fileName}" on OmniStudy AI!`,
+          url: shareUrl,
+        });
+      } else {
+        handleCopyLink(item._id);
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') toast.error('Failed to share');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Navigation */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-        <div className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+            <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
               <span style={{ color: '#1d51df' }}>O</span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
               <span style={{ color: '#1d51df' }} className="ml-1">S</span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-              <span className="inline-block w-2"></span>
+              <span className="inline-block w-1 sm:w-2"></span>
               <span style={{ color: '#1d51df' }}>A</span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
             </span>
@@ -444,23 +475,23 @@ export default function Dashboard({
         </div>
       </header>
 
-      <main className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12">
+      <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12">
         {/* Welcome Section */}
         <section className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold">
+          <h1 className="text-2xl sm:text-4xl font-bold px-2">
             Hi {userName}, ready to simplify your studying?
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base max-w-xs sm:max-w-none mx-auto">
             Upload your PDFs and get instant summaries, mind maps, and infographics
           </p>
         </section>
 
         {/* Upload Panel */}
         <Card className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-[2rem] hover:border-blue-400 hover:shadow-2xl transition-all duration-500">
-          <CardContent className="pt-12 pb-12">
+          <CardContent className="pt-8 pb-8 sm:pt-12 sm:pb-12">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-full">
-                <Upload className="h-12 w-12 text-blue-500" />
+                <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500" />
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Upload Your PDF</h3>
@@ -487,7 +518,7 @@ export default function Dashboard({
 
               <Button
                 size="lg"
-                className="bg-blue-500 hover:bg-blue-600 text-lg px-8"
+                className="bg-blue-500 hover:bg-blue-600 text-base sm:text-lg px-6 sm:px-8"
                 onClick={onUploadClick}
               >
                 <Upload className="mr-2 h-5 w-5" />
@@ -861,6 +892,28 @@ export default function Dashboard({
                         <Download className="h-4 w-4" />
                         Export
                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl outline-none">
+                          <Share2 className="h-4 w-4" />
+                          Share
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1 bg-white dark:bg-slate-900 border shadow-xl z-50">
+                          <DropdownMenuItem onClick={() => handleCopyLink(item._id)} className="gap-2 rounded-xl cursor-copy">
+                            <Copy className="h-4 w-4 text-blue-500" />
+                            Copy Link
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleWhatsAppShare(item)} className="gap-2 rounded-xl">
+                            <MessageCircle className="h-4 w-4 text-green-500" />
+                            WhatsApp
+                          </DropdownMenuItem>
+                          {!!navigator.share && (
+                            <DropdownMenuItem onClick={() => handleSystemShare(item)} className="gap-2 rounded-xl">
+                              <ExternalLink className="h-4 w-4 text-purple-500" />
+                              More...
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon"

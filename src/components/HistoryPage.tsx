@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { BookOpen, ArrowLeft, FileText, Clock, Eye, Download, Trash2, Moon, Sun } from 'lucide-react';
+import { BookOpen, ArrowLeft, FileText, Clock, Eye, Download, Trash2, Moon, Sun, Share2, Copy, MessageCircle, ExternalLink } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import api from '../utils/api';
 import { toast } from 'sonner';
 
@@ -64,7 +70,34 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
             },
         });
     };
+    const handleCopyLink = (id: string) => {
+        const shareUrl = `${window.location.origin}/summary/${id}`;
+        navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+    };
 
+    const handleWhatsAppShare = (item: any) => {
+        const shareUrl = `${window.location.origin}/summary/${item._id}`;
+        const text = encodeURIComponent(`Check out this document summary for "${item.fileName}" on OmniStudy AI: ${shareUrl}`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    };
+
+    const handleSystemShare = async (item: any) => {
+        const shareUrl = `${window.location.origin}/summary/${item._id}`;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: item.fileName,
+                    text: `Check out this document summary for "${item.fileName}" on OmniStudy AI!`,
+                    url: shareUrl,
+                });
+            } else {
+                handleCopyLink(item._id);
+            }
+        } catch (err) {
+            if ((err as Error).name !== 'AbortError') toast.error('Failed to share');
+        }
+    };
     const handleExport = async (id: string, fileName: string) => {
         try {
             toast.info(`Preparing PDF export for ${fileName}...`);
@@ -315,19 +348,19 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-                <div className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+                <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={onBack}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <div className="flex items-center gap-2">
-                            <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+                            <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                                 <span style={{ color: '#1d51df' }}>O</span>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
                                 <span style={{ color: '#1d51df' }} className="ml-1">S</span>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                                <span className="inline-block w-2"></span>
+                                <span className="inline-block w-1 sm:w-2"></span>
                                 <span style={{ color: '#1d51df' }}>A</span>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
                             </span>
@@ -339,7 +372,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                 </div>
             </header>
 
-            <main className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-6">
+            <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-6">
                 <h1 className="text-3xl font-bold">All Summaries</h1>
                 <p className="text-gray-600 dark:text-gray-400">View and manage all your past document summaries.</p>
 
@@ -394,6 +427,28 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                                                     <Download className="h-4 w-4" />
                                                     Export
                                                 </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl outline-none">
+                                                        <Share2 className="h-4 w-4" />
+                                                        Share
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1 bg-white dark:bg-slate-900 border shadow-xl z-50">
+                                                        <DropdownMenuItem onClick={() => handleCopyLink(item._id)} className="gap-2 rounded-xl cursor-copy">
+                                                            <Copy className="h-4 w-4 text-blue-500" />
+                                                            Copy Link
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleWhatsAppShare(item)} className="gap-2 rounded-xl">
+                                                            <MessageCircle className="h-4 w-4 text-green-500" />
+                                                            WhatsApp
+                                                        </DropdownMenuItem>
+                                                        {!!navigator.share && (
+                                                            <DropdownMenuItem onClick={() => handleSystemShare(item)} className="gap-2 rounded-xl">
+                                                                <ExternalLink className="h-4 w-4 text-purple-500" />
+                                                                More...
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"

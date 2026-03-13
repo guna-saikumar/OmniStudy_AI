@@ -81,36 +81,39 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
 
   return (
     <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-2xl font-black">
-              <Table className="h-6 w-6 text-blue-500" />
-              Comparative Analysis
-              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+      <CardHeader className="space-y-3 px-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-xl font-bold uppercase">
+              <div className="flex items-center gap-2">
+                <Table className="h-6 w-6 text-blue-500 shrink-0" />
+                <span className="truncate">Comparison</span>
+              </div>
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400 normal-case tracking-normal hidden sm:inline">
                 — {tables.length} table{tables.length !== 1 ? 's' : ''}
               </span>
             </CardTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Side-by-side breakdown of every key section in{' '}
-              <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span>
-            </p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleDownloadImage}
-            className="rounded-xl gap-2 border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-950"
+            className="rounded-xl gap-2 border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-950 shrink-0 h-9"
           >
             <Download className="h-4 w-4" />
-            Save Image
+            <span className="hidden xs:inline">Save Image</span>
+            <span className="xs:hidden">Save</span>
           </Button>
         </div>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Side-by-side breakdown of every key section in{' '}
+          <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span>
+        </p>
       </CardHeader>
 
       <CardContent className="px-0">
-        <ScrollArea className="h-[650px] w-full pr-4">
-          <div ref={tableRef} className={`space-y-8 pb-8 p-8 relative ${theme === 'dark' ? 'dark' : ''}`} style={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff' }}>
+        <div className="h-[700px] w-full overflow-auto custom-scrollbar">
+          <div ref={tableRef} className={`space-y-8 pb-8 px-0 py-4 relative ${theme === 'dark' ? 'dark' : ''}`} style={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff' }}>
             {/* Background Grid Pattern */}
             <div
               className="absolute inset-0 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"
@@ -128,8 +131,8 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
                       {table.title}
                     </CardTitle>
                   </CardHeader>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse min-w-[600px]">
+                  <div className="overflow-x-auto pb-4">
+                    <table className="w-full text-sm border-collapse min-w-[900px] table-auto">
                       <thead>
                         <tr className="bg-gray-100/50 dark:bg-gray-900 text-left border-y border-gray-200 dark:border-gray-800">
                           <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 w-12 text-center">#</th>
@@ -170,7 +173,7 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );

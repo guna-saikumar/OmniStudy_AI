@@ -5,6 +5,7 @@ import api from '../utils/api';
 import { toast } from 'sonner';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface AuthPageProps {
   onLogin: (userInfo: any) => void;
@@ -19,6 +20,8 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +52,22 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const { data } = await api.post('/users/forgotpassword', { email });
+      toast.success('Check your email for instructions!');
+      setIsForgotPasswordMode(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to send reset instructions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleMode = () => {
+    setIsForgotPasswordMode(false);
     setIsLoginMode(!isLoginMode);
     // Clear form fields when switching modes
     setEmail('');
@@ -90,22 +108,22 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       {/* Auth Card */}
-      <div className="w-full max-w-lg border-2 border-blue-500/30 rounded-3xl bg-slate-900 p-12">
+      <div className="w-full max-w-lg border-2 border-blue-500/30 rounded-3xl bg-slate-900 p-6 sm:p-12">
         {/* Logo */}
         <div className="flex justify-center mb-12">
-          <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+          <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
             <span style={{ color: '#1d51df' }}>O</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
             <span style={{ color: '#1d51df' }} className="ml-1">S</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-            <span className="inline-block w-2"></span>
+            <span className="inline-block w-1 sm:w-2"></span>
             <span style={{ color: '#1d51df' }}>A</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
           </span>
         </div>
 
         {/* LOGIN FORM */}
-        {isLoginMode && (
+        {isLoginMode && !isForgotPasswordMode && (
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Input */}
             <div>
@@ -120,15 +138,33 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
             </div>
 
             {/* Password Input */}
-            <div>
+            <div className="relative">
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter Your Password"
                 value={password}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
-                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordMode(true)}
+                className="text-blue-400 text-sm hover:underline"
+              >
+                Forgot Password?
+              </button>
             </div>
 
             {/* Login Button */}
@@ -158,8 +194,48 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
           </form>
         )}
 
+        {/* FORGOT PASSWORD FORM */}
+        {isForgotPasswordMode && (
+          <form onSubmit={handleForgotPassword} className="space-y-6">
+            <h2 className="text-white text-xl font-bold text-center mb-4">Reset Your Password</h2>
+            <p className="text-gray-400 text-sm text-center">
+              Enter your email address and we'll send you instructions to reset your password.
+            </p>
+            {/* Email Input */}
+            <div>
+              <Input
+                type="email"
+                placeholder="Enter Your Email"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                required
+                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+
+            {/* Reset Button */}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-full py-6 text-base font-medium"
+            >
+              {isLoading ? 'Processing...' : 'Send Reset Link'}
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordMode(false)}
+                className="text-gray-400 text-sm hover:text-white"
+              >
+                Back to Login
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* SIGNUP FORM */}
-        {!isLoginMode && (
+        {!isLoginMode && !isForgotPasswordMode && (
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Input */}
             <div>
@@ -186,27 +262,43 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
             </div>
 
             {/* Password Input */}
-            <div>
+            <div className="relative">
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter Your Password"
                 value={password}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
-                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
 
             {/* Confirm Password Input */}
-            <div>
+            <div className="relative">
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Confirm Your Password"
                 value={confirmPassword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="w-full bg-transparent border-2 border-blue-500/40 rounded-full px-6 py-6 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
 
             {/* Create Account Button */}

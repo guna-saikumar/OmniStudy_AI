@@ -148,19 +148,19 @@ export default function UploadScreen({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Navigation */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+              <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                 <span style={{ color: '#1d51df' }}>O</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
                 <span style={{ color: '#1d51df' }} className="ml-1">S</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-2"></span>
+                <span className="inline-block w-1 sm:w-2"></span>
                 <span style={{ color: '#1d51df' }}>A</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
@@ -181,7 +181,7 @@ export default function UploadScreen({
         </div>
       </header>
 
-      <main className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-12">
+      <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-12">
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
@@ -201,11 +201,11 @@ export default function UploadScreen({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <CardContent className="py-16">
+            <CardContent className="py-8 sm:py-16">
               {!file ? (
                 <div className="flex flex-col items-center justify-center space-y-6 text-center">
                   <div className="bg-blue-50 dark:bg-blue-950 p-8 rounded-full">
-                    <Upload className="h-16 w-16 text-blue-500" />
+                    <Upload className="h-12 w-12 sm:h-16 sm:w-16 text-blue-500" />
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-xl font-bold">

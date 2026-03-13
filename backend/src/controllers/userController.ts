@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import asyncHandler from 'express-async-handler';
@@ -25,6 +26,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: (user as any).profileImage,
             token: generateToken((user._id as any).toString()),
         });
     } else {
@@ -57,6 +59,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: (user as any).profileImage,
             token: generateToken((user._id as any).toString()),
         });
     } else {
@@ -74,6 +77,9 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
     if (user) {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
+        if (req.body.profileImage) {
+            user.profileImage = req.body.profileImage;
+        }
         if (req.body.password) {
             user.password = req.body.password;
         }
@@ -84,6 +90,7 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
             _id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
+            profileImage: updatedUser.profileImage,
             token: generateToken((updatedUser._id as any).toString()),
         });
     } else {
@@ -115,7 +122,7 @@ export const googleAuthUser = asyncHandler(async (req: Request, res: Response) =
             throw new Error('Invalid Google token');
         }
 
-        const { email, name, sub: googleId } = payload;
+        const { email, name, picture, sub: googleId } = payload;
 
         // Check if user exists
         let user = await User.findOne({ email });
@@ -126,6 +133,7 @@ export const googleAuthUser = asyncHandler(async (req: Request, res: Response) =
                 name,
                 email,
                 password: Math.random().toString(36).slice(-8), // Dummy password
+                profileImage: picture,
             });
         }
 
@@ -133,6 +141,7 @@ export const googleAuthUser = asyncHandler(async (req: Request, res: Response) =
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: (user as any).profileImage,
             token: generateToken((user._id as any).toString()),
         });
     } catch (error: any) {
@@ -145,7 +154,7 @@ export const googleAuthUser = asyncHandler(async (req: Request, res: Response) =
 // @route   POST /api/users/google-custom
 // @access  Public
 export const googleAuthUserCustom = asyncHandler(async (req: Request, res: Response) => {
-    const { email, name } = req.body;
+    const { email, name, profileImage } = req.body;
 
     if (!email) {
         res.status(400);
@@ -161,6 +170,7 @@ export const googleAuthUserCustom = asyncHandler(async (req: Request, res: Respo
             name,
             email,
             password: Math.random().toString(36).slice(-8), // Dummy password
+            profileImage: profileImage,
         });
     }
 
@@ -168,6 +178,81 @@ export const googleAuthUserCustom = asyncHandler(async (req: Request, res: Respo
         _id: user._id,
         name: user.name,
         email: user.email,
+        profileImage: (user as any).profileImage,
         token: generateToken((user._id as any).toString()),
+    });
+});
+
+// @desc    Forgot password - generate reset token
+// @route   POST /api/users/forgotpassword
+// @access  Public
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found with that email');
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash and set to resetPasswordToken field
+    (user as any).resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // Set expire (10 minutes)
+    (user as any).resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    // In a real app, send email. For now, return in response for dev.
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+    console.log('--- PASSWORD RESET LINK ---');
+    console.log(resetUrl);
+    console.log('---------------------------');
+
+    res.json({ success: true, message: 'Reset link generated', resetUrl });
+});
+
+// @desc    Reset password
+// @route   PUT /api/users/resetpassword/:resettoken
+// @access  Public
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    // Get hashed token
+    const resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(req.params.resettoken)
+        .digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        res.status(400);
+        throw new Error('Invalid or expired reset token');
+    }
+
+    // Set new password
+    (user as any).password = req.body.password;
+    (user as any).resetPasswordToken = undefined;
+    (user as any).resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.json({
+        success: true,
+        data: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            token: generateToken((user._id as any).toString()),
+        }
     });
 });

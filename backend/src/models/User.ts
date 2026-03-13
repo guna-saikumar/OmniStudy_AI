@@ -18,6 +18,12 @@ const userSchema = new Schema(
             type: String,
             required: true,
         },
+        profileImage: {
+            type: String,
+            required: false,
+        },
+        resetPasswordToken: String,
+        resetPasswordExpires: Date,
     },
     {
         timestamps: true,

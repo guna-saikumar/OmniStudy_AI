@@ -6,6 +6,7 @@ import UploadScreen from './components/UploadScreen';
 import SummaryViewer from './components/SummaryViewer';
 import ProfileSettings from './components/ProfileSettings';
 import HistoryPage from './components/HistoryPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import { Toaster } from './components/ui/sonner';
 
 // ── Reads session state for the summary page (survives F5 refresh) ────────
@@ -219,6 +220,9 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* /reset-password/:token */}
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             {/* Catch-all */}
             <Route path="*" element={<Navigate to={isLoggedIn ? '/' : '/login'} replace />} />

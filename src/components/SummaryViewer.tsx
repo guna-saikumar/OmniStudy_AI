@@ -18,7 +18,16 @@ import {
   List,
   ChevronDown,
   ChevronRight,
+  Copy,
+  ExternalLink,
+  MessageCircle,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { toast } from 'sonner';
 import MindMapViewer from './MindMapViewer';
 import InfographicViewer from './InfographicViewer';
@@ -612,17 +621,25 @@ export default function SummaryViewer({
       if (navigator.share) {
         await navigator.share({
           title: docTitle,
-          text: 'Check out this document summary on OmniStudy AI!',
+          text: `Check out this document summary for "${docTitle}" on OmniStudy AI!`,
           url: window.location.href,
         });
-        toast.success('Shared successfully!');
       } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied to clipboard!');
+        handleCopyLink();
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') toast.error('Failed to share');
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Link copied to clipboard!');
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent(`Check out this document summary for "${docTitle}" on OmniStudy AI: ${window.location.href}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const handleRegenerate = async () => {
@@ -652,18 +669,18 @@ export default function SummaryViewer({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 print:hidden">
-        <div className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+              <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                 <span style={{ color: '#1d51df' }}>O</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
                 <span style={{ color: '#1d51df' }} className="ml-1">S</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-2"></span>
+                <span className="inline-block w-1 sm:w-2"></span>
                 <span style={{ color: '#1d51df' }}>A</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
@@ -675,33 +692,55 @@ export default function SummaryViewer({
         </div>
       </header>
 
-      <main className="w-full px-8 sm:px-16 lg:px-24 xl:px-32 py-8">
+      <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8">
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
             <div>
-              <h1 className="text-3xl font-bold">{docTitle}</h1>
+              <h1 className="text-xl sm:text-3xl font-bold line-clamp-2">{docTitle}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Summary generated from {summary.fileName || fileName}
                 {summary.pages && <span className="ml-2">· {summary.pages} page{summary.pages !== 1 ? 's' : ''}</span>}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownloadModulePDF} className="gap-2 rounded-xl">
-                <Download className="h-4 w-4 text-blue-500" />
-                This Module
-              </Button>
-              <Button variant="default" size="sm" onClick={handleDownloadPDF} className="gap-2 rounded-xl bg-blue-600 hover:bg-blue-700">
-                <Download className="h-4 w-4" />
-                Full Export
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleShare} className="gap-2 rounded-xl">
-                <Share2 className="h-4 w-4" />
-                Share
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleRegenerate} className="border-blue-500 text-blue-500 hover:bg-blue-50 gap-2 rounded-xl">
-                <RefreshCw className="h-4 w-4" />
-                Regenerate
-              </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" onClick={handleDownloadModulePDF} className="gap-2 rounded-xl flex-1 sm:flex-initial">
+                  <Download className="h-4 w-4 text-blue-500" />
+                  This Module
+                </Button>
+                <Button variant="default" size="sm" onClick={handleDownloadPDF} className="gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-initial">
+                  <Download className="h-4 w-4" />
+                  Full Export
+                </Button>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl outline-none flex-1 sm:flex-initial">
+                    <Share2 className="h-4 w-4" />
+                    Share
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1 bg-white dark:bg-slate-900 border shadow-xl z-50">
+                    <DropdownMenuItem onClick={handleCopyLink} className="gap-2 rounded-xl cursor-copy">
+                      <Copy className="h-4 w-4 text-blue-500" />
+                      Copy Link
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleWhatsAppShare} className="gap-2 rounded-xl">
+                      <MessageCircle className="h-4 w-4 text-green-500" />
+                      Share via WhatsApp
+                    </DropdownMenuItem>
+                    {!!navigator.share && (
+                      <DropdownMenuItem onClick={handleShare} className="gap-2 rounded-xl">
+                        <ExternalLink className="h-4 w-4 text-purple-500" />
+                        More Options...
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" size="sm" onClick={handleRegenerate} className="border-blue-500 text-blue-500 hover:bg-blue-50 gap-2 rounded-xl flex-1 sm:flex-initial">
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -719,8 +758,7 @@ export default function SummaryViewer({
                   <div className={`p-1.5 rounded-lg ${isActive ? 'bg-white/20' : tab.iconBg}`}>
                     <span className={isActive ? 'text-white' : tab.iconColor}>{tab.icon}</span>
                   </div>
-                  <span className="hidden lg:inline">{tab.label}</span>
-                  <span className="lg:hidden">{tab.short}</span>
+                  <span>{tab.label}</span>
                 </Button>
               );
             })}
@@ -730,12 +768,14 @@ export default function SummaryViewer({
             {/* Tab: Text */}
             <div id="export-text" className={activeTab === 'text' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800"><CardTitle>Key Points</CardTitle></CardHeader>
-                <CardContent className="p-8">
+                <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
+                  <CardTitle className="text-lg sm:text-xl font-bold">Key Points</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
                       {keyPoints.map((point: string, index: number) => (
-                        <div key={index} className="flex gap-4 p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
+                        <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
                           <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
                           <p className="text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
                         </div>
@@ -749,12 +789,14 @@ export default function SummaryViewer({
             {/* Tab: Outline */}
             <div id="export-outline" className={activeTab === 'outline' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800"><CardTitle>Document Structure</CardTitle></CardHeader>
-                <CardContent className="p-8">
+                <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
+                  <CardTitle className="text-lg sm:text-xl font-bold">Outline</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
                       {documentOutline.map((section, sIdx) => (
-                        <div key={sIdx} className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
                           <button
                             className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-indigo-50/30 to-blue-50/30 dark:from-indigo-950/20 dark:to-blue-950/20 hover:from-indigo-100/40 transition-all"
                             onClick={() => toggleSection(sIdx)}
@@ -772,7 +814,7 @@ export default function SummaryViewer({
                               ))}
                               {section.subSections?.map((sub, ssIdx) => (
                                 <div key={ssIdx} className="pl-6 border-l-2 border-indigo-50 dark:border-indigo-900/50 py-1">
-                                  <h5 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-2">{sub.title}</h5>
+                                  <h5 className="text-xs font-black text-indigo-500 uppercase tracking-tighter mb-2">{sub.title}</h5>
                                   <div className="space-y-1">{sub.bullets.map((sb, sbIdx) => <p key={sbIdx} className="text-xs text-gray-500 dark:text-gray-400">— {sb}</p>)}</div>
                                 </div>
                               ))}

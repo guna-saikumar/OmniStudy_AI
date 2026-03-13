@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ImageIcon, Share2, Download, Maximize2, Layers, GitBranch, LayoutGrid, ZoomIn, ZoomOut } from 'lucide-react';
@@ -38,6 +38,21 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
   const [zoom, setZoom] = useState(100);
   const infoRef = useRef<HTMLDivElement>(null);
   const displayTitle = data?.title || title;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setZoom(40);
+      } else if (window.innerWidth < 1024) {
+        setZoom(60);
+      } else {
+        setZoom(100);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleDownloadImage = async () => {
     if (!infoRef.current) return;
@@ -208,10 +223,10 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
   );
 
   const renderFlow = () => (
-    <div className="relative w-full min-h-[800px] max-w-5xl mx-auto space-y-24 py-16 px-6 overflow-hidden">
+    <div className="relative w-[1000px] min-h-[800px] mx-auto space-y-24 py-16 px-6">
 
       {/* Central Timeline Thread */}
-      <div className="absolute left-[34px] sm:left-1/2 top-8 bottom-8 w-1 bg-indigo-100 dark:bg-slate-800 -translate-x-1/2 rounded-full overflow-hidden">
+      <div className="absolute left-1/2 top-8 bottom-8 w-1 bg-indigo-100 dark:bg-slate-800 -translate-x-1/2 rounded-full overflow-hidden">
         <div className="w-full h-1/2 bg-gradient-to-b from-indigo-400 to-transparent" />
       </div>
 
@@ -228,6 +243,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
               ${isLeft ? 'text-right pr-8' : 'text-left pl-8'} 
               ${isTechnical ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/10' : 'border-slate-100 dark:border-slate-800'}
               ${isProcess ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/10' : ''}
+              min-w-[280px] sm:min-w-0
             `}>
               {/* Dynamic Badge */}
               <div className={`absolute top-3 ${isLeft ? 'right-6' : 'left-6'} px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter
@@ -254,9 +270,9 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
         };
 
         return (
-          <div key={i} className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-14 group">
+          <div key={i} className="relative z-10 flex flex-row items-center justify-center gap-6 sm:gap-14 group">
             {/* Left Slot */}
-            <div className={`flex-1 w-full sm:w-auto transition-all duration-500 ${isEven ? 'opacity-100' : 'hidden sm:block sm:opacity-0 pointer-events-none'}`}>
+            <div className={`flex-1 transition-all duration-500 ${isEven ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <StepCard isLeft={true} sectionType={section.type} />
             </div>
 
@@ -269,7 +285,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             </div>
 
             {/* Right Slot */}
-            <div className={`flex-1 w-full sm:w-auto transition-all duration-500 ${!isEven ? 'opacity-100' : 'hidden sm:block sm:opacity-0 pointer-events-none'}`}>
+            <div className={`flex-1 transition-all duration-500 ${!isEven ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <StepCard isLeft={false} sectionType={section.type} />
             </div>
           </div>
@@ -345,11 +361,11 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
 
   const renderFlowchart = () => {
     return (
-      <div className="relative w-full min-h-[850px] py-16 px-6 overflow-hidden">
-        <div className="relative z-10 max-w-5xl mx-auto space-y-16">
-          <div className="text-center mb-12">
-            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-500 mb-2">SYSTEM ARCHITECTURE</h3>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Conceptual Logic Diagram</h2>
+      <div className="relative w-[1000px] min-h-[850px] py-16 px-6">
+        <div className="relative z-10 space-y-16">
+          <div className="space-y-4 text-center">
+            <h3 className="text-xs font-black text-indigo-500 uppercase tracking-[0.3em]">the infographic architecture</h3>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase">Conceptual Logic Diagram</h2>
           </div>
 
           <div className="flex flex-col items-center gap-24">
@@ -398,7 +414,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                           <span className="text-[13px] font-black text-teal-600/50">{String(i + 1).padStart(2, '0')}</span>
                         </div>
                         <div className="p-5 flex flex-col items-center">
-                          <span className="font-black text-[14px] sm:text-[15px] uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
+                          <span className="font-black text-[14px] sm:text-[15px] uppercase text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="w-full space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
                               <div key={pi} className="text-[10px] text-teal-700/70 dark:text-teal-400/70 font-bold bg-teal-500/5 dark:bg-teal-400/5 px-3 py-2 rounded border border-teal-100 dark:border-teal-900/30">
@@ -413,8 +429,9 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                     {typeIndex === 2 && ( /* Data Store Style */
                       <div className="w-full h-full bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-900/50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex ring-4 ring-indigo-50/50 dark:ring-indigo-950/20 overflow-hidden group-hover:ring-indigo-500/10 transition-all min-h-[140px]">
                         <div className="w-14 h-full bg-indigo-500/10 border-r-2 border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-1">
-                          <Layers className="w-5 h-5 text-indigo-500" />
-                          <span className="text-[7px] font-black text-indigo-400 uppercase tracking-tighter">Unit {i + 1}</span>
+                          <div className="bg-indigo-50/50 dark:bg-indigo-950/20 px-2.5 py-1 rounded-full border border-indigo-100 dark:border-indigo-800">
+                            <span className="text-[7px] font-black text-indigo-400 uppercase">Unit {i + 1}</span>
+                          </div>
                         </div>
                         <div className="flex-1 flex flex-col p-5">
                           <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest mb-1 text-center">{section.type || 'STORE'}</span>
@@ -469,7 +486,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Layers className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase tracking-tighter">Visual Infographic</CardTitle>
+            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white uppercase">Infographic</CardTitle>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sections.length} Core Segments Processed</p>
           </div>
         </div>
@@ -537,16 +554,16 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
 
       <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10`}>
         <div
-          className="min-w-full min-h-full flex items-start justify-center py-20"
+          className="min-w-full min-h-full flex items-start sm:justify-center justify-start py-10 sm:py-20 px-4 sm:px-0"
         >
           <div
             ref={infoRef}
             data-infographic-content="true"
             data-infographic-view={viewMode}
-            className="transition-transform duration-300 relative bg-white dark:bg-slate-900"
+            className="transition-transform duration-300 relative bg-white dark:bg-slate-900 shadow-2xl rounded-[2rem]"
             style={{
               transform: `scale(${zoom / 100})`,
-              transformOrigin: 'center top'
+              transformOrigin: window.innerWidth < 640 ? 'left top' : 'center top'
             }}
           >
             {viewMode === 'hub' && renderHub()}
