@@ -353,7 +353,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                     ) : (
                         <>
                             {history.map((item) => (
-                                <Card key={item._id} className="hover:shadow-md transition-shadow">
+                                <Card key={item._id} className="hover:shadow-md transition-shadow dark:bg-black">
                                     <CardContent className="p-6">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <div className="flex items-start gap-4 flex-1">
