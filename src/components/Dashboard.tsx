@@ -27,7 +27,12 @@ import {
   ChevronDown,
   List,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import * as htmlToImage from 'html-to-image';
+import MindMapViewer from './MindMapViewer';
+import InfographicViewer from './InfographicViewer';
+import ComparativeTableViewer from './ComparativeTableViewer';
+import FlashcardsViewer from './FlashcardsViewer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +69,8 @@ export default function Dashboard({
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [activeExportData, setActiveExportData] = useState<any>(null);
+  const exportContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const userInfo = localStorage.getItem('userInfo');
@@ -99,33 +106,59 @@ export default function Dashboard({
     }
   };
 
+  // Helper function to capture hidden elements
+  const captureElement = async (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const originalStyle = el.style.display;
+    el.style.display = 'block';
+    try {
+      const dataUrl = await htmlToImage.toPng(el, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: '#0f172a',
+        style: { transform: 'scale(1)', padding: '20px' },
+        cacheBust: true,
+      });
+      el.style.display = originalStyle;
+      return dataUrl;
+    } catch (e) {
+      console.error(`Failed to capture ${id}`, e);
+      el.style.display = originalStyle;
+      return null;
+    }
+  };
+
   // Handle Export button click
   const handleExport = async (item: any) => {
     try {
-      toast.info(`Preparing full Study Report for ${item.fileName}...`);
+      toast.info('Generating comprehensive report with visuals...', { duration: 5000 });
 
-      // Fetch the full summary data to ensure we have all models (text, outline, flashcards, table, etc.)
-      const { data: fullItem } = await api.get(`/summaries/${item._id}`);
-      const content = fullItem.content || {};
-      const fileName = fullItem.fileName;
+      // Fetch the full summary data
+      const { data: fullSummary } = await api.get(`/summaries/${item._id}`);
+      setActiveExportData(fullSummary);
+
+      // Give components a moment to render in the hidden div
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const docTitle = fullSummary.fileName;
+      const content = fullSummary.content || {};
       const keyPoints = Array.isArray(content.text) ? content.text : (typeof content.text === 'string' ? content.text.split('\n') : []);
-      const outline = content.documentOutline || [];
-      const mindmapData = content.mindMapData || {};
-      const infographicData = content.infographicData || {};
+      const documentOutline = content.documentOutline || [];
       const flashcards = content.flashcards || [];
       const tables = content.comparativeTable || [];
 
-
       const element = document.createElement('div');
       element.className = 'pdf-export-container';
-      element.style.background = '#030712'; // Slate 950 (Page Background)
+      element.style.padding = '40px';
+      element.style.background = '#030712';
       element.style.color = '#f8fafc';
       element.style.fontFamily = 'Inter, sans-serif';
 
       let html = `
         <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
-            <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
-            <p style="font-size: 14px; color: #94a3b8; margin: 0;">Comprehensive Research Report: <span style="color: #60a5fa;">${fileName}</span></p>
+          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
+          <p style="font-size: 14px; color: #94a3b8; margin: 0;">Comprehensive Research Report: <span style="color: #60a5fa;">${docTitle}</span></p>
         </div>
       `;
 
@@ -133,141 +166,128 @@ export default function Dashboard({
       if (keyPoints.length > 0) {
         html += `
           <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                  ${keyPoints.map((p: string, idx: number) => `
-                      <div style="display: flex; align-items: center; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; page-break-inside: avoid;">
-                          <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">
-                              ${idx + 1}
-                          </div>
-                          <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
-                      </div>
-                  `).join('')}
-              </div>
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              ${keyPoints.map((p: string, idx: number) => `
+                <div style="display: flex; align-items: start; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; page-break-inside: avoid;">
+                  <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; line-height: 1;">${idx + 1}</div>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
+                </div>
+              `).join('')}
+            </div>
           </div>
         `;
       }
 
       // 2. Outline
-      if (outline.length > 0) {
+      if (documentOutline.length > 0) {
         html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">outline</h2>
-              ${outline.map((s: any, idx: number) => `
-                  <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; page-break-inside: avoid; background: #020617;">
-                      <div style="background: rgba(16, 185, 129, 0.1); padding: 14px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 15px;">
-                          <div style="width: 24px; height: 24px; background: #10b981; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">
-                              ${idx + 1}
-                          </div>
-                          <h3 style="font-size: 16px; font-weight: bold; color: #f8fafc; margin: 0;">${s.heading}</h3>
-                      </div>
-                      <div style="padding: 18px;">
-                          <div style="margin-bottom: 15px;">
-                              ${(s.bullets || []).map((b: string) => `
-                                  <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
-                                      <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; margin-top: 8px; margin-right: 12px; flex-shrink: 0;"></span>
-                                      <p style="margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.6;">${b}</p>
-                                  </div>
-                              `).join('')}
-                          </div>
-                          ${(s.subSections || []).map((sub: any, subIdx: number) => `
-                              <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 1px solid #1e293b;">
-                                  <h4 style="font-size: 14px; font-weight: bold; color: #10b981; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                                      ${sub.title}
-                                  </h4>
-                                  <div style="padding-left: 12px;">
-                                      ${(sub.bullets || []).map((sb: string) => `
-                                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px;">
-                                              <span style="display: inline-block; width: 4px; height: 4px; background: #475569; border-radius: 50%; margin-top: 8px; margin-right: 10px; flex-shrink: 0;"></span>
-                                              <p style="margin: 0; color: #64748b; font-size: 13px;">${sb}</p>
-                                          </div>
-                                      `).join('')}
-                                  </div>
-                              </div>
-                          `).join('')}
-                      </div>
+          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 24px; border: 1px solid #1e293b;">
+            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">document structure</h2>
+            ${documentOutline.map((s: any, idx: number) => `
+              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; page-break-inside: avoid; background: #020617;">
+                <div style="background: linear-gradient(to right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1)); padding: 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 16px;">
+                  <div style="width: 32px; height: 32px; background: #6366f1; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0;">${idx + 1}</div>
+                  <h3 style="font-size: 16px; font-weight: 800; color: #f8fafc; margin: 0;">${s.heading}</h3>
+                </div>
+                <div style="padding: 24px; background: rgba(15, 23, 42, 0.5);">
+                  <div style="margin-bottom: 20px;">
+                    ${(s.bullets || []).map((b: string) => `
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; gap: 12px;">
+                          <span style="display: block; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; margin-top: 8px; flex-shrink: 0;"></span>
+                          <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; font-weight: 500;">${b}</p>
+                        </div>
+                    `).join('')}
                   </div>
-              `).join('')}
-          </div>
-        `;
-      }
-
-      // 3. Infographic (hub, steps, orbit, flow)
-      if (infographicData) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">infographic (hub,steps , orbit , flow)</h2>
-              
-              ${infographicData.sections ? `
-                  <!-- Hub Section -->
-                  <div style="margin-bottom: 35px; page-break-inside: avoid;">
-                      <p style="font-weight: bold; font-size: 15px; color: #818cf8; margin-bottom: 15px; display: flex; align-items: center;">
-                          <span style="width: 8px; height: 8px; background: #818cf8; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #818cf8;"></span>
-                          Knowledge Hub
-                      </p>
-                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                          ${infographicData.sections.slice(0, 6).map((sec: any) => `
-                              <div style="background: #020617; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; border-top: 3px solid #818cf8;">
-                                  <span style="font-size: 11px; font-weight: bold; color: #c7d2fe; text-transform: uppercase; letter-spacing: 0.8px;">${sec.title}</span>
-                                  <p style="font-size: 13px; color: #94a3b8; margin-top: 10px; line-height: 1.6;">${sec.points ? sec.points[0] : ''}</p>
-                              </div>
-                          `).join('')}
-                      </div>
-                  </div>
-
-                  <!-- Process Flow Section -->
-                  ${infographicData.logicalFlow ? `
-                      <div style="margin-bottom: 35px; page-break-inside: avoid;">
-                          <p style="font-weight: bold; font-size: 15px; color: #fb923c; margin-bottom: 15px; display: flex; align-items: center;">
-                              <span style="width: 8px; height: 8px; background: #fb923c; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #fb923c;"></span>
-                              Logical Interaction Flow
-                          </p>
-                          <div style="background: #020617; border: 1px solid #1e293b; padding: 25px; border-radius: 15px; border-style: dashed; border-color: #334155;">
-                              ${infographicData.logicalFlow.map((f: any) => `
-                                  <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                      <span style="background: #0f172a; border: 1.5px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.from}</span>
-                                      <span style="margin: 0 18px; color: #fb923c; font-weight: bold; font-size: 20px;">➔</span>
-                                      <span style="background: #0f172a; border: 1.5px solid #fb923c; padding: 8px 14px; border-radius: 8px; font-size: 13px; color: #fdba74; font-weight: 600;">${f.to}</span>
-                                      <span style="font-size: 12px; color: #64748b; margin-left: 18px; font-style: italic;">(${f.label})</span>
-                                  </div>
-                              `).join('')}
+                  ${(s.subSections || []).map((sub: any) => `
+                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 2px solid #312e81; padding-top: 4px; padding-bottom: 4px;">
+                      <h4 style="font-size: 11px; font-weight: 900; color: #818cf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">${sub.title}</h4>
+                      <div style="padding-left: 4px;">
+                        ${(sub.bullets || []).map((sb: string) => `
+                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px; gap: 10px;">
+                            <span style="color: #475569; font-size: 12px;">—</span>
+                            <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 400;">${sb}</p>
                           </div>
+                        `).join('')}
                       </div>
-                  ` : ''}
-
-                  <!-- Orbit Summary -->
-                  <div style="margin-bottom: 10px; page-break-inside: avoid;">
-                      <p style="font-weight: bold; font-size: 15px; color: #22d3ee; margin-bottom: 15px; display: flex; align-items: center;">
-                          <span style="width: 8px; height: 8px; background: #22d3ee; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 10px #22d3ee;"></span>
-                          Conceptual Orbit
-                      </p>
-                      <div style="background: #000000; border: 1px solid #22d3ee; padding: 25px; border-radius: 100px; text-align: center; border-style: dotted;">
-                          <p style="font-size: 14px; color: #e0f2fe; margin: 0; font-weight: 600;">
-                              Core Sphere: <strong style="font-size: 16px; color: #22d3ee;">${fileName}</strong>
-                          </p>
-                          <p style="font-size: 12px; color: #bae6fd; margin-top: 10px; letter-spacing: 0.5px;">
-                              Outer Influence: ${infographicData.sections.slice(0, 5).map((s: any) => s.title).join(' • ')}
-                          </p>
-                      </div>
-                  </div>
-              ` : ''}
-          </div>
-        `;
-      }
-
-      // 4. Mindmap Summary
-      if (mindmapData?.nodes) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">mindmap</h2>
-              <div style="background: #020617; border: 1px solid #312e81; padding: 25px; border-radius: 12px; border-right: 8px solid #7c3aed; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);">
-                  <p style="font-size: 15px; color: #e0e7ff; line-height: 1.7; margin: 0;">
-                      Complete neural network mapped with <strong style="color: #c084fc;">${mindmapData.nodes.length}</strong> semantic nodes. 
-                      Primary branches: <span style="color: #a5b4fc;">${mindmapData.nodes.slice(0, 8).map((n: any) => n.name || n.label).join(', ')}</span>.
-                  </p>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
+            `).join('')}
           </div>
         `;
+      }
+
+      // 3. Mind Maps
+      const mindmapWrapper = document.getElementById('dash-export-mindmap');
+      if (mindmapWrapper) {
+        const originalDisplay = mindmapWrapper.style.display;
+        mindmapWrapper.style.display = 'block';
+        const innerMaps = mindmapWrapper.querySelectorAll('[data-mindmap-content="true"]');
+
+        for (let i = 0; i < innerMaps.length; i++) {
+          const mapEl = innerMaps[i] as HTMLElement;
+          const mapImg = await htmlToImage.toPng(mapEl, {
+            quality: 1.0,
+            pixelRatio: 3,
+            backgroundColor: '#0f172a',
+            style: { transform: 'scale(1)', padding: '20px' }
+          });
+
+          html += `
+            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: 10px; box-sizing: border-box;">
+              <div style="width: 96%; border-radius: 24px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 15px 45px rgba(0,0,0,0.6);">
+                <img src="${mapImg}" style="width: 100%; height: auto; display: block;" />
+              </div>
+              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
+                OmniStudy AI • Mind Map ${i + 1}
+              </div>
+            </div>
+          `;
+        }
+        mindmapWrapper.style.display = originalDisplay;
+      }
+
+      // 4. Infographics
+      const infraWrapper = document.getElementById('dash-export-infographic-all');
+      if (infraWrapper) {
+        const originalDisplay = infraWrapper.style.display;
+        infraWrapper.style.display = 'block';
+        const innerInfras = infraWrapper.querySelectorAll('[data-infographic-content="true"]');
+
+        for (let i = 0; i < innerInfras.length; i++) {
+          const infraEl = innerInfras[i] as HTMLElement;
+          const infraType = infraEl.getAttribute('data-infographic-view') || 'Visual';
+          const infraImg = await htmlToImage.toPng(infraEl, {
+            quality: 1.0,
+            pixelRatio: 3,
+            backgroundColor: '#0f172a',
+            style: { transform: 'scale(1)', padding: '20px' }
+          });
+
+          const typeLabels: Record<string, string> = {
+            hub: 'Knowledge Hub',
+            flow: 'Logical Interaction Flow',
+            circular: 'Conceptual Orbit',
+            flowchart: 'Structural Progression'
+          };
+
+          const isSteps = infraType === 'flow';
+          const isFlowchart = infraType === 'flowchart';
+
+          html += `
+            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: ${isFlowchart || isSteps ? '40px' : '10px'}; box-sizing: border-box;">
+               <div style="width: ${isFlowchart ? '42%' : isSteps ? '75%' : '96%'}; ${isFlowchart ? 'max-width: 95mm;' : isSteps ? 'max-height: 265mm;' : ''} border-radius: 20px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 12px 40px rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;">
+                  <img src="${infraImg}" style="max-width: 100%; max-height: ${isSteps ? '260mm' : '100%'}; width: auto; height: auto; display: block; object-fit: contain;" />
+               </div>
+               <div style="margin-top: ${isFlowchart || isSteps ? '30px' : '25px'}; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
+                  OmniStudy AI • ${typeLabels[infraType] || 'Visual Infographic'}
+               </div>
+            </div>
+          `;
+        }
+        infraWrapper.style.display = originalDisplay;
       }
 
       // 5. Flashcards
@@ -276,15 +296,10 @@ export default function Dashboard({
           <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
               <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">flashcards</h2>
               <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                  ${flashcards.map((f: any, i: number) => `
-                      <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);">
-                          <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                              <span style="background: #ec4899; color: white; border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: bold; margin-right: 12px;">CARD ${i + 1}</span>
-                              <p style="font-weight: 700; color: #fdf2f8; margin: 0; font-size: 15px;">Q: ${f.question}</p>
-                          </div>
-                          <div style="border-top: 1px dashed #500724; padding-top: 12px; color: #fbcfe8; font-size: 14px; line-height: 1.6;">
-                              <strong style="color: #f472b6; display: block; margin-bottom: 4px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">The Insight:</strong> ${f.answer}
-                          </div>
+                  ${flashcards.map((f: any) => `
+                      <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899; margin-bottom: 12px; page-break-inside: avoid;">
+                          <p style="font-weight: 700; color: #fdf2f8; margin-bottom: 8px; font-size: 15px;">Q: ${f.question}</p>
+                          <p style="color: #fbcfe8; font-size: 14px; line-height: 1.6; border-top: 1px dashed #500724; padding-top: 8px;">A: ${f.answer}</p>
                       </div>
                   `).join('')}
               </div>
@@ -293,71 +308,52 @@ export default function Dashboard({
       }
 
       // 6. Comparative Tables
-      if (Array.isArray(tables) && tables.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">comparative tables</h2>
-            ${tables.map((table: any, tIdx: number) => {
-          if (!table) return '';
-          const isExpanded = table.headers && table.rows;
-          const headers = isExpanded ? table.headers : (table[0] ? Object.keys(table[0]) : []);
-          const rows = isExpanded ? table.rows : table;
-          const tableTitle = table.title || `Comparison Group ${tIdx + 1}`;
-
-          return `
-                <div style="margin-bottom: 25px; page-break-inside: avoid;">
-                  <h3 style="font-size: 15px; font-weight: bold; color: #374151; margin-bottom: 10px;">${tableTitle}</h3>
-                  <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #d1d5db;">
-                    <thead>
-                      <tr style="background: #f3f4f6; color: #111827;">
-                        ${headers.map((h: string) => `<th style="border: 1px solid #d1d5db; padding: 10px; text-align: left;">${h}</th>`).join('')}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${rows.map((row: any) => `
-                        <tr>
-                          ${isExpanded
-              ? row.map((cell: any) => `<td style="border: 1px solid #d1d5db; padding: 10px; vertical-align: top;">${cell || ''}</td>`).join('')
-              : headers.map((k: string) => `<td style="border: 1px solid #d1d5db; padding: 10px; vertical-align: top;">${row[k] || ''}</td>`).join('')
-            }
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              `;
-        }).join('')}
-          </div>
-        `;
+      if (tables.length > 0) {
+        tables.forEach((table: any, i: number) => {
+          const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
+          const rows = table.rows || (Array.isArray(table) ? table : []);
+          html += `
+            <div style="page-break-before: always; padding: 20px; background: #030712; min-height: 280mm;">
+              <h2 style="font-size: 20px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 700; letter-spacing: 0.5px;">comparative analysis ${tables.length > 1 ? (i + 1) : ''}</h2>
+              <div style="background: #020617; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #cbd5e1;">
+                  <thead><tr style="background: #000000;">
+                    ${headers.map((h: string) => `<th style="border: 1px solid #1e293b; padding: 14px; text-align: left; color: #60a5fa;">${h}</th>`).join('')}
+                  </tr></thead>
+                  <tbody>
+                    ${rows.map((row: any) => `
+                      <tr>${(Array.isArray(row) ? row : Object.values(row)).map((cell: any) => `<td style="border: 1px solid #1e293b; padding: 14px;">${cell || ''}</td>`).join('')}</tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
+                OmniStudy AI • Comparison Data
+              </div>
+            </div>
+          `;
+        });
       }
-
-      html += `
-        <div style="text-align: center; margin-top: 50px; border-top: 1px solid #e5e7eb; padding-top: 20px; font-size: 12px; color: #9ca3af;">
-          Generated exclusively by OmniStudy AI - Your Personal Intelligence Partner
-        </div>
-      `;
 
       element.innerHTML = html;
 
-      // Dynamic import to avoid blocking initial load
-      // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
-
-      const opt: any = {
-        margin: [15, 15, 15, 15] as [number, number, number, number],
-        filename: `${fullItem.fileName.split('.')[0]}_StudyReport.pdf`,
-        image: { type: 'jpeg', quality: 1.0 },
+      const opt = {
+        margin: 0,
+        filename: `${docTitle}_Full_Report.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       await html2pdf().set(opt).from(element).save();
-      toast.success('Ultimate Study Report generated successfully!');
+      setActiveExportData(null);
+      toast.success('Comprehensive Study Report generated successfully!');
     } catch (err: any) {
       console.error('Export failed:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Check terminal for details';
-      toast.error(`Report failed: ${errorMessage}`);
+      toast.error('Failed to generate full report');
+      setActiveExportData(null);
     }
   };
 
@@ -907,6 +903,22 @@ export default function Dashboard({
           )}
         </section>
       </main>
+      {/* Export Capture Utility (Hidden) */}
+      <div className="pointer-events-none absolute" style={{ top: -10000, left: -5000, overflow: 'hidden' }}>
+        {activeExportData && (
+          <>
+            <div id="dash-export-mindmap" style={{ display: 'none' }}>
+              <MindMapViewer title={activeExportData.fileName} data={activeExportData.content?.mindMapData} theme={theme} />
+            </div>
+            <div id="dash-export-infographic-all" style={{ display: 'none', width: '1400px' }}>
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="hub" />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flow" />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="circular" />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flowchart" />
+            </div>
+          </>
+        )}
+      </div>
     </div >
   );
 }
