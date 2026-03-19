@@ -4,6 +4,8 @@ import multer from 'multer';
 // pdf-parse v2 uses a class-based API
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PDFParse } = require('pdf-parse');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mammoth = require('mammoth');
 import Summary from '../models/Summary';
 import { generateSummaryFromText } from '../services/aiService';
 
@@ -14,10 +16,18 @@ export const upload = multer({
     storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
     fileFilter: (_req, file, cb) => {
-        if (file.mimetype === 'application/pdf') {
+        const allowedTypes = [
+            'application/pdf',
+            'text/plain',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-powerpoint'
+        ];
+        if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Only PDF files are allowed'));
+            cb(new Error('PDF, DOCX, PPT, and TXT files only are allowed'));
         }
     },
 });
@@ -39,25 +49,42 @@ export const uploadAndGenerateSummary = asyncHandler(async (req: Request, res: R
     const fileName = req.file.originalname;
     const fileSize = req.file.size;
 
-    // Extract text from PDF buffer using pdf-parse v2 class API
+    // Extract text based on file type
     let pdfText = '';
     let pages = 1;
     try {
-        const parser = new PDFParse({ data: req.file.buffer });
-        const pdfData = await parser.getText();
-        // v2 returns { pages: Array<{ text: string }> }
-        pdfText = pdfData.pages.map((p: any) => p.text).join('\n');
-        pages = pdfData.pages.length || 1;
+        if (req.file.mimetype === 'application/pdf') {
+            const parser = new PDFParse({ data: req.file.buffer });
+            const pdfData = await parser.getText();
+            pdfText = pdfData.pages.map((p: any) => p.text).join('\n');
+            pages = pdfData.pages.length || 1;
+        } else if (req.file.mimetype === 'text/plain') {
+            pdfText = req.file.buffer.toString('utf-8');
+            pages = Math.ceil(pdfText.length / 2000) || 1;
+        } else if (req.file.mimetype.includes('wordprocessingml') || req.file.mimetype.includes('msword')) {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+            pdfText = result.value;
+            pages = Math.ceil(pdfText.length / 2000) || 1;
+        } else if (req.file.mimetype.includes('presentationml') || req.file.mimetype.includes('powerpoint')) {
+            // office-text-extractor 4.x is ESM only, use dynamic import
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { getTextExtractor } = await import('office-text-extractor');
+            const extractor = getTextExtractor();
+            pdfText = await extractor.extractText({ input: req.file.buffer, type: 'buffer' });
+            pages = Math.ceil(pdfText.length / 2000) || 1;
+        } else {
+            throw new Error('Unsupported file type');
+        }
     } catch (err: any) {
-        console.error('[PDF Parse Error]', err.message);
+        console.error('[Text Extraction Error]', err.message);
         res.status(422);
-        throw new Error('Could not extract text from PDF. Please ensure the PDF contains readable text.');
+        throw new Error(`Could not extract text from file: ${err.message}`);
     }
 
 
     if (!pdfText || pdfText.trim().length < 50) {
         res.status(422);
-        throw new Error('PDF appears to be empty or contains only images. Please upload a text-based PDF.');
+        throw new Error('The file appears to be empty or does not contain readable text.');
     }
 
     // Generate all 6 summary modes using OpenAI

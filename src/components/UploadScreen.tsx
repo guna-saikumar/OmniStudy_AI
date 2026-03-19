@@ -37,8 +37,17 @@ export default function UploadScreen({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
-    if (file.type !== 'application/pdf') {
-      return 'Please upload a PDF file';
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-powerpoint'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      return 'Please upload a PDF, TXT, PPT, or DOCX file';
     }
     return null;
   };
@@ -223,7 +232,7 @@ export default function UploadScreen({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.txt,.docx,.doc,.pptx,.ppt"
                     className="hidden"
                     onChange={handleFileInputChange}
                   />
@@ -314,7 +323,7 @@ export default function UploadScreen({
               <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                  Accepts all standard PDF formats
+                  Accepts PDF, TXT, DOCX, and PPT formats
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-blue-500" />

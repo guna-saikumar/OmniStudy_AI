@@ -319,17 +319,22 @@ export const generateSummaryFromText = async (
     }
 
     const systemPrompt = `You are an advanced AI PDF summarization engine.
-Your goal is to be extremely thorough and exhaustive. You must analyze every single page and section of the provided document.
+Your goal is to be extremely thorough and exhaustive. You must analyze every single page and section of the provided document to generate exactly 6 Core Study Modules.
+
+The 6 Core Study Modules you MUST generate:
+1. KEY POINTS: An exhaustive, detailed list of strings representing the most critical facts and findings.
+2. DOCUMENT OUTLINE: A highly granular multi-level structure of the entire document.
+3. INFOGRAPHICS: Visual-ready data sections illustrating themes, processes, and logical flows.
+4. MIND MAPS: A comprehensive array of conceptual maps for every major topic.
+5. FLASHCARDS: A large set of high-quality study/review questions and answers.
+6. COMPARISON: Detailed tables comparing and contrasting related concepts, features, or processes.
 
 Your responsibilities:
-- Conduct a deep analysis of all pages, headings, sub-headings, and body text.
-- Generate a concise but comprehensive list of key points as an array of strings in the "text" field.
-- Create a detailed mind map structure.
-- Produce infographic-ready data and concept relationships.
-- Generate high-quality study questions (flashcards).
-- Identify and incorporate important highlighted or technical terms.
-- Avoid hallucination and stick strictly to the provided content.
-- Return clean, valid JSON.
+- Conduct a deep, page-by-page analysis of the full text.
+- Never skip sections or summarize so broadly that details are lost.
+- Ensure that the information in each module reflects the SCALE of the full document (more content for longer files).
+- Identify and incorporate important technical terms and highlights.
+- Return clean, valid JSON matching the requested structure.
 
 Document Name: "${fileName}"`;
 
@@ -344,22 +349,26 @@ Document Name: "${fileName}"`;
         };
     }
 
-    const userPromptPart1 = `Deeply analyze the ENTIRE provided PDF text. You must not skip any pages.
+    const textLimit = 1000000; // Increased limit for long PDFs
+    const truncatedText = pdfText.length > textLimit ? pdfText.substring(0, textLimit) : pdfText;
 
-For the "documentOutline" field, generate a highly detailed structured outline. Include EVERY major heading and sub-heading from ALL pages of the document. For each heading/sub-heading, provide 3-5 concise bullets. 
-CRITICAL OUTLINE RULE: Do NOT clump the entire document under a generic level 1 heading like "Unit 1" or "Chapter 1". Instead, extract EACH MAIN CONCEPT (e.g., "Supervised Learning", "Support Vector Machines", "Evaluation Metrics") as its own distinct Level 1 heading array object. There should be MANY Level 1 headings representing the core concepts from the PDF.
+    const userPromptPart1 = `CRITICAL TASK: Analyze the ENTIRE provided PDF text to generate the first 3 of the 6 core modules (Key Points, Document Outline, and Topic Theme Clusters).
+
+For the "text" (Key Points) field: Generate an exhaustive list of exactly 40 to 80 detailed key points from every page of the document.
+For the "documentOutline" field: Generate a highly detailed multi-level structured outline covering ALL headings and sub-headings. Each heading must have 5-8 granular bullet points.
 
 PDF Content:
 """
-${pdfText.substring(0, Math.min(pdfText.length, 500000))}
+${truncatedText}
 """
 
 Return ONLY raw JSON with this exact structure for Part 1:
 {
   "text": [
-    "Key point 1",
-    "Key point 2",
-    "Key point 3"
+    "Comprehensive key point from page 1-5...",
+    "Deep technical detail from middle sections...",
+    "Crucial insight identified towards the end...",
+    "...(continue to provide 40-60+ points for large documents)..."
   ],
   "documentOutline": [
     {
@@ -384,50 +393,19 @@ Return ONLY raw JSON with this exact structure for Part 1:
 }
 
 RULES:
-1. Provide an exhaustive analysis covering all pages. Do NOT skip any section. Provide deep, comprehensive arrays matching the document's full depth.
+1. Provide an extremely exhaustive analysis covering all pages. Do NOT skip any details. The "text" and "documentOutline" arrays should be as large as possible to capture information from the entire document.
 2. Return ONLY raw JSON without markdown formatting.`;
 
-    const userPromptPart2 = `Deeply analyze the ENTIRE provided PDF text. You must not skip any pages.
+    const userPromptPart2 = `CRITICAL TASK: Analyze the ENTIRE provided PDF text to generate the remaining 3 of the 6 core modules (Infographics, Comparison Tables, Flashcards, and Mind Maps).
 
-For the "infographicData" field, generate a comprehensive set of visual sections. Analyze the main themes. For each theme, provide:
-1. A Title and 3-5 high-impact short bullet points.
-2. A "type" field (one of: "architecture", "process", "database", "logic", "security", "overview", "strategy").
-3. A "relevance" score (1-100).
-4. A "logicalFlow" array showing connections.
-5. "metadata": { "complexity": "low|medium|high", "priority": 1-5, "visualStyle": "gradient|outline|solid" }.
-
-For the "comparativeTable" field, exhaustively compare all related concepts. Generate AT LEAST 5 to 10 separate functional difference tables (e.g., "Supervised vs Unsupervised", "Classification vs Regression", "Process A vs Process B"). Do not limit to just one table.
-
-For the "flashcards" field, generate AT LEAST 15 to 20 highly detailed flashcards covering all major details, definitions, and concepts across all pages.
-
-For the "mindMapData" field, act as an expert knowledge organizer. Convert the PDF content into an array of detailed mind maps, creating a separate mind map for EACH major concept (e.g., "Supervised Learning", "Unsupervised Learning", etc.).
-Instructions:
-- Identify the core concepts of the document.
-- Generate a distinct mind map for each core concept.
-- For each concept's mind map, generate subtopics (e.g. Definition, How it Works, Algorithms, Features, Pros/Cons) and key points as branches.
-- Analyze all the topics, headings, and deeply detailed content to generate as many branches/nodes as necessary.
-- Output MUST be a JSON ARRAY of mind map objects.
-- Structure for EACH mind map object in the array:
-[
-  {
-    "title": "Concept Name (e.g., Supervised Learning)",
-    "nodes": [
-      {
-        "name": "Branch Category (e.g., Definition)",
-        "children": [
-          {
-            "name": "Detail 1",
-            "children": []
-          }
-        ]
-      }
-    ]
-  }
-]
+For the "infographicData" (Visual Modality) field: Generate at least 15-20 detailed visual sections highlighting themes, processes, and logical connections.
+For the "comparativeTable" (Analytical Comparison) field: Generate at least 10-15 separate functional comparison tables for all related concepts across the whole PDF.
+For the "flashcards" (Active Recall) field: Generate at least 50 highly detailed flashcards from every page.
+For the "mindMapData" (Knowledge Organization) field: Generate a separate, detailed mind map for EVERY major concept found in the document.
 
 PDF Content:
 """
-${pdfText.substring(0, Math.min(pdfText.length, 500000))}
+${truncatedText}
 """
 
 Return ONLY raw JSON with this exact structure for Part 2:
@@ -443,7 +421,7 @@ Return ONLY raw JSON with this exact structure for Part 2:
     "sections": [
       {
         "title": "Major Theme 1", 
-        "points": ["Granular detail 1", "Granular detail 2", "Expanded explanation 3", "Contextual example 4"],
+        "points": ["Granular detail 1", "Granular detail 2", "Expanded explanation 3", "Contextual example 4", "Deep technical insight 5", "Secondary application 6"],
         "type": "process",
         "relevance": 85,
         "metadata": { "complexity": "medium", "priority": 1 }
@@ -464,18 +442,18 @@ Return ONLY raw JSON with this exact structure for Part 2:
 }
 
 RULES:
-1. Provide an exhaustive analysis covering all pages. Do NOT skip any section. Provide deep, comprehensive arrays matching the document's full depth.
+1. Provide an exhaustive analysis covering all pages. If the document is very long, focus on high-impact summaries for sections to avoid exceeding output token limits.
 2. The infographic data should be high-impact, focusing on the most important technical concepts and their logical flow.
 3. Incorporate all highlighted technical terms, definitions, and important data points.
-4. Keep bullet points concise but information-dense.
+4. Keep bullet points information-dense and highly technical.
 5. Return ONLY raw JSON without markdown formatting.`;
 
     try {
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash-lite",
+            model: "gemini-2.5-flash",
             generationConfig: {
                 responseMimeType: "application/json",
-                maxOutputTokens: 8192,
+                maxOutputTokens: 16384, // Increased for exhaustive summaries
             }
         });
 
@@ -498,10 +476,10 @@ RULES:
             parsedPart2 = JSON.parse(cleanContent2 || '{}');
 
         } catch (parseError: any) {
-            console.error("[Gemini AI] JSON Parsing failed.");
-            console.error("Part 1 text:", responseText1);
-            console.error("Part 2 text:", responseText2);
-            throw new Error('Gemini AI returned a truncated or invalid summary. Please try a shorter PDF or check the server logs.');
+            console.error("[Gemini AI] JSON Parsing failed. Possible truncation due to document length.");
+            console.error("Part 1 text preview:", responseText1.substring(0, 500));
+            console.error("Part 2 text preview:", responseText2.substring(0, 500));
+            throw new Error('The AI generated a very large summary that exceeded processing limits. Please try again or use a slightly smaller document section.');
         }
 
         const topicClusters = (parsedPart1.topicClusters || []).map(

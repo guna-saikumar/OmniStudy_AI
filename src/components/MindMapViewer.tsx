@@ -85,7 +85,7 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
   };
 
   const W = 1400;
-  const H = Math.max(900, nodes.length * 120);
+  const H = Math.max(900, nodes.length * 230);
   const cx = W / 2;
   const cy = H / 2;
   const centerRadius = 140;
@@ -230,9 +230,10 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
               const bullets = node.children || node.nodes || [];
 
               return (
-                <foreignObject key={`left-box-${i}`} x={100 - 20} y={nodeY - boxH / 2 - 20} width={boxW + 40} height={boxH + 40}>
-                  <div
-                    className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
+                <foreignObject key={`left-box-${i}`} x={100} y={nodeY - 250} width={boxW} height={475}>
+                  <div className="w-full h-full flex flex-col items-center justify-center">
+                    <div
+                      className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
                     style={{
                       backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
                       border: `4px solid ${color}`,
@@ -242,8 +243,7 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                       padding: '32px 24px 24px 24px',
                       boxSizing: 'border-box',
                       width: `${boxW}px`,
-                      height: `${boxH}px`,
-                      margin: '20px'
+                      minHeight: `${boxH}px`,
                     }}
                   >
                     <div
@@ -297,12 +297,12 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                     </div>
 
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {bullets.slice(0, 3).map((b: any, bi: number) => (
+                      {bullets.map((b: any, bi: number) => (
                         <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
                           <span
                             className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}
-                            style={{ fontSize: '12px', fontWeight: '700', lineHeight: '1.3' }}
+                            style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}
                           >
                             {b.name || b.label}
                           </span>
@@ -310,7 +310,8 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                       ))}
                     </div>
                   </div>
-                </foreignObject>
+                </div>
+              </foreignObject>
               );
             })}
 
@@ -325,9 +326,10 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
               const bullets = node.children || node.nodes || [];
 
               return (
-                <foreignObject key={`right-box-${i}`} x={W - 100 - boxW - 20} y={nodeY - boxH / 2 - 20} width={boxW + 40} height={boxH + 40}>
-                  <div
-                    className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
+                <foreignObject key={`right-box-${i}`} x={W - 100 - boxW} y={nodeY - 350} width={boxW} height={700}>
+                  <div className="w-full h-full flex flex-col items-center justify-center">
+                    <div
+                      className="rounded-3xl shadow-lg transition-transform hover:-translate-y-1 relative"
                     style={{
                       backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
                       border: `4px solid ${color}`,
@@ -337,8 +339,7 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                       padding: '32px 24px 24px 24px',
                       boxSizing: 'border-box',
                       width: `${boxW}px`,
-                      height: `${boxH}px`,
-                      margin: '20px'
+                      minHeight: `${boxH}px`,
                     }}
                   >
                     <div
@@ -392,12 +393,12 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                     </div>
 
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {bullets.slice(0, 3).map((b: any, bi: number) => (
+                      {bullets.map((b: any, bi: number) => (
                         <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
                           <span
                             className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}
-                            style={{ fontSize: '12px', fontWeight: '700', lineHeight: '1.3' }}
+                            style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}
                           >
                             {b.name || b.label}
                           </span>
@@ -405,7 +406,8 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark' }: Singl
                       ))}
                     </div>
                   </div>
-                </foreignObject>
+                </div>
+              </foreignObject>
               );
             })}
 

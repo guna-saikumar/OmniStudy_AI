@@ -82,7 +82,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
   }, [data]);
 
   const renderHub = () => (
-    <div className="relative w-[1200px] min-h-[1000px] flex items-center justify-center p-20 group transition-all duration-500 mx-auto">
+    <div className="relative w-[1200px] min-h-[1200px] flex items-center justify-center p-32 group transition-all duration-500 mx-auto">
 
       <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
