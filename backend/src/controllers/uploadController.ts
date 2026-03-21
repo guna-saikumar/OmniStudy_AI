@@ -14,7 +14,7 @@ const storage = multer.memoryStorage();
 
 export const upload = multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+    limits: { fileSize: 50 * 1024 * 1024 }, // Allowed 50MB max for larger documents
     fileFilter: (_req, file, cb) => {
         const allowedTypes = [
             'application/pdf',
@@ -79,6 +79,12 @@ export const uploadAndGenerateSummary = asyncHandler(async (req: Request, res: R
         console.error('[Text Extraction Error]', err.message);
         res.status(422);
         throw new Error(`Could not extract text from file: ${err.message}`);
+    }
+
+    // Enforce 100-page limit
+    if (pages > 100) {
+        res.status(422);
+        throw new Error(`The uploaded file has ${pages} pages. The maximum limit is 100 pages to ensure generation quality.`);
     }
 
 

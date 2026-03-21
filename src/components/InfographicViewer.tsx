@@ -21,6 +21,9 @@ interface InfographicViewerProps {
   data?: InfographicData;
   theme?: 'light' | 'dark';
   forcedViewMode?: 'hub' | 'flow' | 'circular' | 'flowchart';
+  forcedFanned?: boolean;
+  contentOnly?: boolean;
+  onViewModeChange?: (mode: 'hub' | 'flow' | 'circular' | 'flowchart') => void;
 }
 
 const THEME_COLORS = [
@@ -32,8 +35,14 @@ const THEME_COLORS = [
   { main: '#ec4899', light: 'rgba(236, 72, 153, 0.1)', border: '#f472b6' }, // Pink
 ];
 
-export default function InfographicViewer({ title, data, theme = 'dark', forcedViewMode }: InfographicViewerProps) {
-  const [internalViewMode, setViewMode] = useState<'hub' | 'flow' | 'circular' | 'flowchart'>('hub');
+export default function InfographicViewer({ title, data, theme = 'dark', forcedViewMode, forcedFanned, contentOnly, onViewModeChange }: InfographicViewerProps) {
+  const [internalViewMode, setInternalViewMode] = useState<'hub' | 'flow' | 'circular' | 'flowchart'>('hub');
+  
+  const setViewMode = (mode: 'hub' | 'flow' | 'circular' | 'flowchart') => {
+    setInternalViewMode(mode);
+    if (onViewModeChange) onViewModeChange(mode);
+  };
+  
   const viewMode = forcedViewMode || internalViewMode;
   const [zoom, setZoom] = useState(100);
   const infoRef = useRef<HTMLDivElement>(null);
@@ -55,15 +64,22 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
   }, []);
 
   const handleDownloadImage = async () => {
-    if (!infoRef.current) return;
+    const infoElement = infoRef.current;
+    if (!infoElement) return;
     try {
-      const dataUrl = await htmlToImage.toPng(infoRef.current, {
+      const dataUrl = await htmlToImage.toPng(infoElement, {
         quality: 1.0,
-        pixelRatio: 3,
-        backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+        pixelRatio: 5.5,
+        backgroundColor: theme === 'dark' ? '#030712' : '#ffffff',
         style: {
           transform: 'scale(1)',
-          transformOrigin: 'top left',
+          transformOrigin: 'center center',
+          opacity: '1',
+          overflow: 'visible',
+          // Force all animations to end/be invisible to the capture engine
+          animation: 'none !important',
+          transition: 'none !important',
+          imageRendering: '-webkit-optimize-contrast'
         },
       });
       const link = document.createElement('a');
@@ -81,146 +97,147 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
       : [{ title: 'Subject Overview', points: ['Analyzing document structure...', 'Extracting key themes...', 'Mapping conceptual relationships...'] }];
   }, [data]);
 
-  const renderHub = () => (
-    <div className="relative w-[1200px] min-h-[1200px] flex items-center justify-center p-32 group transition-all duration-500 mx-auto">
+  const [fanned, setFanned] = useState(forcedFanned || false);
 
-      <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>
-          <filter id="hubGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-        {sections.slice(0, 10).map((section, i) => {
-          const count = Math.min(sections.length, 10);
-          const angle = (i * 360) / count - 90;
-          const rad = (angle * Math.PI) / 180;
+  useEffect(() => {
+    const timer = setTimeout(() => setFanned(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
-          // Unified tracks: same as card positioning
-          const trackX = 32;
-          const trackY = i % 2 === 0 ? 30 : 34;
+  const renderHub = () => {
+    const isTwoCircle = sections.length > 10;
+    const isCondensed = sections.length > 5;
+    const hubWidth = contentOnly ? (isTwoCircle ? 1350 : 1300) : (isTwoCircle ? 1350 : 1300);
+    const hubHeight = contentOnly ? (isTwoCircle ? 2800 : 2200) : (isTwoCircle ? 1800 : 1400); 
+    const cardScale = contentOnly ? 1 : (isTwoCircle ? 0.72 : (isCondensed ? 0.8 : 1));
+    
+    return (
+      <div 
+        className="relative flex items-center justify-center p-32 group transition-all duration-500 mx-auto overflow-visible"
+        style={{ width: `${hubWidth}px`, minHeight: `${hubHeight}px` }}
+      >
+        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <filter id="hubGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation={contentOnly ? "0" : "0.8"} result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          {sections.slice(0, 15).map((section: InfographicSection, i: number) => {
+            // CONDITIONAL CIRCLE LOGIC: Single circle up to 10, then tiered
+            const isOuter = isTwoCircle && i >= 6;
+            const countOnCircle = isOuter ? (sections.length - 6) : (isTwoCircle ? 6 : sections.length);
+            const circleIndex = isOuter ? (i - 6) : i;
+            
+            const angle = (circleIndex * 360) / countOnCircle - 90;
+            const rad = (angle * Math.PI) / 180;
+ 
+            const baseRadiusX = isTwoCircle ? (isOuter ? 43 : 21) : (isCondensed ? 38 : 36);
+            const baseRadiusY = isTwoCircle ? (isOuter ? 45 : 22) : (isCondensed ? 38 : 36);
+            const trackX = (isCondensed && i % 2 === 0 ? baseRadiusX - 4 : baseRadiusX);
+            const trackY = (isCondensed && i % 2 === 0 ? baseRadiusY - 4 : baseRadiusY);
+ 
+            const x1 = 50;
+            const y1 = 50;
+            const x2 = fanned ? 50 + (trackX - 2) * Math.cos(rad) : 50;
+            const y2 = fanned ? 50 + (trackY - 2) * Math.sin(rad) : 50;
 
-          const startRadius = 12; // Start from outside the hexagon hub
-          const x1 = 50 + startRadius * Math.cos(rad);
-          const y1 = 50 + startRadius * Math.sin(rad);
+            const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
+            const color = isTech ? '#3b82f6' : THEME_COLORS[i % THEME_COLORS.length].main;
 
-          const x2 = 50 + (trackX - 2.5) * Math.cos(rad); // End slightly before card center
-          const y2 = 50 + (trackY - 2.5) * Math.sin(rad);
+            return (
+              <g key={i}>
+                <path
+                  d={`M ${x1} ${y1} L ${x2} ${y2}`}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth="1"
+                  strokeOpacity={fanned ? 0.4 : 0}
+                  style={{ transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)', transitionDelay: `${i * 0.08}s` }}
+                  filter="url(#hubGlow)"
+                />
+              </g>
+            );
+          })}
+        </svg>
 
-          const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
-          const isProcess = section.type === 'process';
-          const color = isTech ? '#3b82f6' : isProcess ? '#10b981' : THEME_COLORS[i % THEME_COLORS.length].main;
-
-          return (
-            <g key={i}>
-              <path
-                d={`M ${x1} ${y1} Q ${50 + 18 * Math.cos(rad - 0.15)} ${50 + 18 * Math.sin(rad - 0.15)} ${x2} ${y2}`}
-                fill="none"
-                stroke={color}
-                strokeWidth="2.5"
-                strokeOpacity="0.5"
-                filter="url(#hubGlow)"
-              />
-              {/* Departure Node */}
-              <circle
-                cx={x1}
-                cy={y1}
-                r="1.4"
-                fill="white"
-                className="animate-pulse"
-              />
-              <circle
-                cx={x1}
-                cy={y1}
-                r="3"
-                fill={color}
-                fillOpacity="0.3"
-              />
-
-              {/* Arrival Node */}
-              <circle
-                cx={x2}
-                cy={y2}
-                r="1.8"
-                fill={color}
-              />
-              <circle
-                cx={x2}
-                cy={y2}
-                r="4"
-                fill={color}
-                fillOpacity="0.2"
-                className="animate-ping"
-              />
-            </g>
-          );
-        })}
-      </svg>
-
-      <div className="relative z-10 w-52 h-52 sm:w-64 sm:h-64 flex items-center justify-center">
-        <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full animate-pulse" />
-        <div
-          className="w-full h-full bg-white dark:bg-slate-900 shadow-2xl border-4 border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center p-8 text-center"
-          style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
-        >
-          <div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-4 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-[0_10px_20px_-5px_rgba(79,70,229,0.5)]">
-              <Layers className="text-white w-6 h-6 sm:w-7 sm:h-7" />
+        <div className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
+          <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full animate-pulse" />
+          <div
+            className="w-full h-full bg-white dark:bg-slate-900 shadow-2xl border-4 border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center p-8 text-center"
+            style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+          >
+            <div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Layers className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-indigo-500 mb-1">Knowledge Hub</h3>
+              <h2 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white leading-tight uppercase tracking-tight overflow-visible break-words">{displayTitle}</h2>
             </div>
-            <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-indigo-500 mb-2">Knowledge Hub</h3>
-            <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-white leading-tight line-clamp-3 uppercase tracking-tighter">{displayTitle}</h2>
           </div>
         </div>
-      </div>
 
-      {sections.slice(0, 10).map((section, i) => {
-        const count = Math.min(sections.length, 10);
-        const angle = (i * 360) / count - 90;
-        const rad = (angle * Math.PI) / 180;
+        {sections.slice(0, 15).map((section: InfographicSection, i: number) => {
+          const isOuter = isTwoCircle && i >= 6;
+          const countOnCircle = isOuter ? (sections.length - 6) : (isTwoCircle ? 6 : sections.length);
+          const circleIndex = isOuter ? (i - 6) : i;
+          
+          const angle = (circleIndex * 360) / countOnCircle - 90;
+          const rad = (angle * Math.PI) / 180;
+ 
+          const baseRadiusX = isTwoCircle ? (isOuter ? 43 : 21) : (isCondensed ? 38 : 36);
+          const baseRadiusY = isTwoCircle ? (isOuter ? 45 : 22) : (isCondensed ? 38 : 36);
+          const trackX = (isCondensed && i % 2 === 0 ? baseRadiusX - 4 : baseRadiusX);
+          const trackY = (isCondensed && i % 2 === 0 ? baseRadiusY - 4 : baseRadiusY);
+ 
+          const xPos = fanned ? 50 + trackX * Math.cos(rad) : 50;
+          const yPos = fanned ? 50 + trackY * Math.sin(rad) : 50;
 
-        // Match the staggered track logic (synchronized and tightened)
-        const trackX = i % 2 === 0 ? 34 : 34;
-        const trackY = i % 2 === 0 ? 34 : 36;
+          const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
+          const color = isTech ? '#3b82f6' : THEME_COLORS[i % THEME_COLORS.length].main;
 
-        const xPos = 50 + trackX * Math.cos(rad);
-        const yPos = 50 + trackY * Math.sin(rad);
-
-        const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
-        const isProcess = section.type === 'process';
-        const color = isTech ? '#3b82f6' : isProcess ? '#10b981' : THEME_COLORS[i % THEME_COLORS.length].main;
-
-        return (
-          <div
-            key={i}
-            className="absolute z-20 w-[240px] sm:w-[280px] -translate-x-1/2 -translate-y-1/2 group"
-            style={{ left: `${xPos}%`, top: `${yPos}%` }}
-          >
-            <div className={`bg-white/95 dark:bg-slate-900 border-2 rounded-[2rem] p-6 shadow-xl transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl
-              ${isTech ? 'border-blue-100 dark:border-blue-900/40 bg-blue-50/5' : isProcess ? 'border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/5' : 'border-slate-100 dark:border-slate-800'}
-            `}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white shadow-lg" style={{ backgroundColor: color }}>
-                  {i + 1}
+          return (
+            <div
+              key={i}
+              className="absolute z-20"
+              style={{ 
+                left: `${xPos}%`, 
+                top: `${yPos}%`,
+                width: `${isTwoCircle ? 200 : (isCondensed ? 210 : 250)}px`,
+                transform: `translate(-50%, -50%) scale(${fanned ? cardScale : 0})`,
+                opacity: fanned ? 1 : 0,
+                transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                transitionDelay: `${i * 0.08}s`,
+                pointerEvents: fanned ? 'auto' : 'none'
+              }}
+            >
+              <div className={`bg-white/95 dark:bg-slate-900 border-2 rounded-[2rem] p-5 shadow-xl transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl hover:z-30
+                ${isTech ? 'border-blue-100 dark:border-blue-900/40' : 'border-slate-100 dark:border-slate-800'}
+              `}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: color }}>
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-black text-[13px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-none">{section.title}</h4>
+                    <div className="text-[9px] font-bold text-slate-400/80 uppercase tracking-widest mt-0.5">{section.type || 'Insight'}</div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="font-black text-[14px] sm:text-[16px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-2">{section.title}</h4>
-                  <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-widest mt-1">{section.type || 'Insight'}</div>
-                </div>
+                <ul className="space-y-1">
+                  {section.points.slice(0, 2).map((p: string, pi: number) => (
+                    <li key={pi} className="flex gap-2">
+                      <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0 opacity-60" style={{ backgroundColor: color }} />
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug font-semibold">{p}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-2">
-                {section.points.slice(0, 3).map((p, pi) => (
-                  <li key={pi} className="flex gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 opacity-60" style={{ backgroundColor: color }} />
-                    <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed font-semibold break-words">{p}</p>
-                  </li>
-                ))}
-              </ul>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderFlow = () => (
     <div className="relative w-[1000px] min-h-[800px] mx-auto space-y-24 py-16 px-6">
@@ -230,7 +247,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
         <div className="w-full h-1/2 bg-gradient-to-b from-indigo-400 to-transparent" />
       </div>
 
-      {sections.map((section, i) => {
+      {sections.map((section: InfographicSection, i: number) => {
         const color = THEME_COLORS[i % THEME_COLORS.length];
         const isEven = i % 2 === 0;
 
@@ -258,7 +275,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                 {isLeft && <GitBranch className="h-3.5 w-3.5 text-indigo-500" />}
               </h3>
               <ul className="space-y-3">
-                {section.points.slice(0, 5).map((p, pi) => (
+                {section.points.slice(0, 5).map((p: string, pi: number) => (
                   <li key={pi} className={`flex gap-3 ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color.main }} />
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-bold break-words">{p}</p>
@@ -294,60 +311,75 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
     </div>
   );
 
-  const renderCircular = () => (
-    <div className="relative w-[1200px] min-h-[1000px] mx-auto flex items-center justify-center p-20 group transition-all duration-500">
+  const renderCircular = () => {
+    const isTwoCircle = sections.length > 10;
+    const hubWidth = contentOnly ? (isTwoCircle ? 1400 : 1300) : (isTwoCircle ? 1400 : 1300);
+    const hubHeight = contentOnly ? (isTwoCircle ? 3200 : 2500) : (isTwoCircle ? 2000 : 1400);
 
-      <div className="relative z-30 w-48 h-48 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-full flex items-center justify-center p-8 text-center shadow-[0_20px_50px_rgba(79,70,229,0.25)] border-8 border-white dark:border-slate-800 group">
-        <div className="absolute inset-0 rounded-full border border-indigo-500/30 animate-ping opacity-20" />
-        <div>
-          <h2 className="text-white text-xs font-black uppercase tracking-tighter leading-tight mb-2">{displayTitle}</h2>
-          <p className="text-[10px] text-indigo-200 font-black uppercase tracking-[0.2em]">{sections.length} Core Nodes</p>
+    return (
+      <div 
+        className="relative mx-auto flex items-center justify-center p-20 group transition-all duration-500 overflow-visible"
+        style={{ width: `${hubWidth}px`, minHeight: `${hubHeight}px` }}
+      >
+        <div className="relative z-30 w-48 h-48 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-full flex items-center justify-center p-8 text-center shadow-[0_20px_50px_rgba(79,70,229,0.25)] border-8 border-white dark:border-slate-800 group">
+          <div className="absolute inset-0 rounded-full border border-indigo-500/30 animate-ping opacity-20" />
+          <div>
+            <h2 className="text-white text-[10px] font-black uppercase tracking-tighter leading-tight mb-2 break-words text-center">{displayTitle}</h2>
+            <p className="text-[9px] text-indigo-200 font-black uppercase tracking-[0.2em] text-center">{sections.length} Nodes</p>
+          </div>
         </div>
-      </div>
 
-      {sections.slice(0, 8).map((section, i) => {
-        const count = Math.min(sections.length, 8);
-        const radius = 340;
-        const angle = (i * 360) / count - 90;
-        const rad = (angle * Math.PI) / 180;
-        const x = Math.cos(rad) * radius;
-        const y = Math.sin(rad) * radius;
+        {sections.slice(0, 15).map((section: InfographicSection, i: number) => {
+          const isOuter = isTwoCircle && i >= 6;
+          const countOnCircle = isOuter ? (sections.length - 6) : (isTwoCircle ? 6 : sections.length);
+          const circleIndex = isOuter ? (i - 6) : i;
+          
+          const angle = (circleIndex * 360) / countOnCircle - 90;
+          const rad = (angle * Math.PI) / 180;
+          
+          const radiusX = isTwoCircle ? (isOuter ? 550 : 280) : 500; 
+          const radiusY = contentOnly 
+            ? (isTwoCircle ? (isOuter ? 1300 : 550) : 1000) 
+            : (isTwoCircle ? (isOuter ? 750 : 320) : 500);
+          const x = Math.cos(rad) * radiusX;
+          const y = Math.sin(rad) * radiusY;
 
-        const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
-        const isProcess = section.type === 'process';
-        const color = isTech ? '#3b82f6' : isProcess ? '#10b981' : THEME_COLORS[i % THEME_COLORS.length].main;
+          const isTech = ['architecture', 'database', 'security'].includes(section.type || '');
+          const isProcess = section.type === 'process';
+          const color = isTech ? '#3b82f6' : isProcess ? '#10b981' : THEME_COLORS[i % THEME_COLORS.length].main;
 
-        return (
-          <div
-            key={i}
-            className="absolute z-20 flex flex-col items-center gap-3 transition-transform duration-500 hover:scale-110"
-            style={{ transform: `translate(${x}px, ${y}px)` }}
-          >
-            <div className={`w-14 h-14 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border-4 flex items-center justify-center transform rotate-12 hover:rotate-0 transition-transform`} style={{ borderColor: color }}>
-              <span className="text-slate-800 dark:text-white font-black text-lg">{i + 1}</span>
-            </div>
-            <div className={`w-56 bg-white/95 dark:bg-slate-900 shadow-xl rounded-[2rem] p-6 border-2 text-center transition-all group-hover:border-indigo-400
-              ${isTech ? 'border-blue-100 dark:border-blue-900/50' : 'border-slate-100 dark:border-slate-800'}
-            `}>
-              <h4 className="font-black text-[14px] sm:text-[16px] uppercase tracking-tighter text-slate-800 dark:text-white mb-3 line-clamp-2 leading-tight">{section.title}</h4>
-              <div className="space-y-1.5 text-left">
-                {section.points.slice(0, 2).map((p, pi) => (
-                  <div key={pi} className="flex gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color }} />
-                    <p className="text-[12px] text-slate-500 dark:text-slate-400 font-bold leading-tight break-words">{p}</p>
-                  </div>
-                ))}
+          return (
+            <div
+              key={i}
+              className="absolute z-20 flex flex-col items-center gap-3 transition-transform duration-500 hover:scale-105"
+              style={{ transform: `translate(${x}px, ${y}px)` }}
+            >
+              <div className={`w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border-4 flex items-center justify-center transform rotate-12 hover:rotate-0 transition-transform`} style={{ borderColor: color }}>
+                <span className="text-slate-800 dark:text-white font-black text-sm">{i + 1}</span>
+              </div>
+              <div className={`w-[180px] bg-white/95 dark:bg-slate-900 shadow-xl rounded-[2rem] p-4 border-2 text-center transition-all group-hover:border-indigo-400
+                ${isTech ? 'border-blue-100 dark:border-blue-900/40' : 'border-slate-100 dark:border-slate-800'}
+              `}>
+                <h4 className="font-black text-[12px] uppercase tracking-tighter text-slate-800 dark:text-white mb-2 line-clamp-none leading-tight">{section.title}</h4>
+                <div className="space-y-1 text-left">
+                  {section.points.slice(0, 2).map((p: string, pi: number) => (
+                    <div key={pi} className="flex gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: color }} />
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-tight break-words">{p}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
-      <div className="absolute w-[440px] h-[440px] border-2 border-indigo-200 dark:border-slate-700 rounded-full border-dashed animate-[spin_60s_linear_infinite]" />
-      <div className="absolute w-[300px] h-[300px] border-2 border-indigo-100 dark:border-indigo-900/30 rounded-full border-dashed animate-[spin_40s_linear_infinite_reverse]" />
-    </div>
-  );
-
+        <div className="absolute w-[600px] h-[600px] border-2 border-indigo-200 dark:border-slate-700 rounded-full border-dashed animate-[spin_60s_linear_infinite]" />
+        <div className="absolute w-[400px] h-[400px] border-2 border-indigo-100 dark:border-indigo-900/30 rounded-full border-dashed animate-[spin_40s_linear_infinite_reverse]" />
+      </div>
+    );
+  };
+ 
   // Helper for actual pie segments
   const PieChartSegment = ({ cx, cy, r, startAngle, endAngle, color }: { cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: string }) => {
     const x1 = cx + r * Math.cos((Math.PI * startAngle) / 180);
@@ -369,7 +401,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
           </div>
 
           <div className="flex flex-col items-center gap-24">
-            {sections.slice(0, 8).map((section, i) => {
+            {sections.slice(0, 8).map((section: InfographicSection, i: number) => {
               const isEven = i % 2 === 0;
               const nextSection = sections[i + 1];
 
@@ -478,6 +510,25 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
     );
   };
 
+  if (contentOnly) {
+    return (
+      <div className={`${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-visible`}>
+         <div
+            ref={infoRef}
+            data-infographic-view={viewMode}
+            data-pdf-export-target="true"
+            data-infographic-label={viewMode === 'hub' ? 'Hub' : viewMode === 'flow' ? 'Steps' : viewMode === 'circular' ? 'Orbit' : 'Flow'}
+            className="transition-transform duration-300 relative bg-white dark:bg-slate-900 shadow-2xl rounded-[2rem]"
+          >
+            {viewMode === 'hub' && renderHub()}
+            {viewMode === 'flow' && renderFlow()}
+            {viewMode === 'circular' && renderCircular()}
+            {viewMode === 'flowchart' && renderFlowchart()}
+          </div>
+      </div>
+    );
+  }
+
   return (
     <Card className="h-[900px] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 rounded-[3rem] isolate">
       <CardHeader className="flex-shrink-0 flex flex-col xl:flex-row items-center justify-between gap-6 p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-20">
@@ -552,13 +603,14 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
         </div>
       </CardHeader>
 
-      <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10`}>
+      <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10 p-0`}>
         <div
-          className="min-w-full min-h-full flex items-start sm:justify-center justify-start py-10 sm:py-20 px-4 sm:px-0"
+          className={`min-w-full min-h-full flex items-start py-10 sm:py-32 px-10 sm:px-40 ${
+            ['flow', 'flowchart'].includes(viewMode) ? 'justify-center' : 'justify-start'
+          }`}
         >
           <div
             ref={infoRef}
-            data-infographic-content="true"
             data-infographic-view={viewMode}
             className="transition-transform duration-300 relative bg-white dark:bg-slate-900 shadow-2xl rounded-[2rem]"
             style={{

@@ -333,8 +333,8 @@ Your responsibilities:
 - Conduct a deep, page-by-page analysis of the full text.
 - Never skip sections or summarize so broadly that details are lost.
 - Ensure that the information in each module reflects the SCALE of the full document (more content for longer files).
-- Identify and incorporate important technical terms and highlights.
-- Return clean, valid JSON matching the requested structure.
+- Identification of technical terms is mandatory.
+- CRITICAL: Never use "N/A", "Not Applicable", "No data", or "Not available" in any field (tables, flashcards, etc.). If a specific detail is missing from the text, synthesize a relevant conceptual explanation or an intelligent educational placeholder that fits the topic's context.
 
 Document Name: "${fileName}"`;
 
@@ -355,7 +355,7 @@ Document Name: "${fileName}"`;
     const userPromptPart1 = `CRITICAL TASK: Analyze the ENTIRE provided PDF text to generate the first 3 of the 6 core modules (Key Points, Document Outline, and Topic Theme Clusters).
 
 For the "text" (Key Points) field: Generate an exhaustive list of exactly 40 to 80 detailed key points from every page of the document.
-For the "documentOutline" field: Generate a highly detailed multi-level structured outline covering ALL headings and sub-headings. Each heading must have 5-8 granular bullet points.
+For the "documentOutline" field: Generate an extremely granular multi-level structured outline covering EVERY heading and sub-heading. Each primary heading MUST have 8-12 exhaustive bullet points plus a minimum of 4-6 detailed sub-sections (sub-headings), each with its own specific bullets. Do not skip any logical segment of the document.
 
 PDF Content:
 """
@@ -377,9 +377,15 @@ Return ONLY raw JSON with this exact structure for Part 1:
       "bullets": ["Granular point 1", "Granular point 2", "Important definition/highlight"],
       "subSections": [
         {
-          "title": "EXACT sub-heading or logical sub-component",
-          "bullets": ["Specific detail A", "Specific detail B"]
-        }
+          "title": "Specific detail or sub-case",
+          "bullets": ["Technical point X", "Case study Y"]
+        },
+        {
+          "title": "Methodological sub-component",
+          "bullets": ["Process step 1", "Performance metric 2"]
+        },
+        { "title": "Additional Context", "bullets": ["..."] },
+        { "title": "Related Case Study", "bullets": ["..."] }
       ]
     },
     {
@@ -398,10 +404,10 @@ RULES:
 
     const userPromptPart2 = `CRITICAL TASK: Analyze the ENTIRE provided PDF text to generate the remaining 3 of the 6 core modules (Infographics, Comparison Tables, Flashcards, and Mind Maps).
 
-For the "infographicData" (Visual Modality) field: Generate at least 15-20 detailed visual sections highlighting themes, processes, and logical connections.
+For the "infographicData" (Visual Modality) field: Generate a minimum of 10-15 detailed visual sections highlighting themes, processes, and logical connections. Do not summarize broadly; be granular.
 For the "comparativeTable" (Analytical Comparison) field: Generate at least 10-15 separate functional comparison tables for all related concepts across the whole PDF.
 For the "flashcards" (Active Recall) field: Generate at least 50 highly detailed flashcards from every page.
-For the "mindMapData" (Knowledge Organization) field: Generate a separate, detailed mind map for EVERY major concept found in the document.
+For the "mindMapData" (Knowledge Organization) field: Generate an ARRAY of at least 4-6 exhaustive mind map objects, each covering a major chapter or logical theme. Each mind map MUST have at least 6-12 primary branches (major rectangles). Each of these primary branches MUST contain at least 4-6 detailed sub-nodes/children for deep granularity. This is a strict minimum—add more as required by the complexity.
 
 PDF Content:
 """
@@ -412,23 +418,49 @@ Return ONLY raw JSON with this exact structure for Part 2:
 {
   "mindMapData": [
     {
-      "title": "Concept Name",
-      "nodes": [{"name": "Branch", "children": [{"name": "Detail", "children": []}]}]
-    }
+      "title": "Theme or Chapter Title",
+      "nodes": [
+        {
+          "name": "Major Segment",
+          "children": [
+            {"name": "Detailed Sub-node 1", "children": []},
+            {"name": "Detailed Sub-node 2", "children": []},
+            {"name": "Detailed Sub-node 3", "children": []},
+            {"name": "Detailed Sub-node 4", "children": []}
+          ]
+        },
+        { "name": "Segment 2", "children": [] },
+        { "name": "Segment 3", "children": [] },
+        { "name": "Segment 4", "children": [] },
+        { "name": "Segment 5", "children": [] },
+        { "name": "Segment 6", "children": [] }
+      ]
+    },
+    { "title": "Another Major Chapter", "nodes": [] }
   ],
   "infographicData": {
-    "title": "document title",
+    "title": "Exhaustive Document Title",
     "sections": [
       {
-        "title": "Major Theme 1", 
-        "points": ["Granular detail 1", "Granular detail 2", "Expanded explanation 3", "Contextual example 4", "Deep technical insight 5", "Secondary application 6"],
+        "title": "First Major Concept", 
+        "points": ["Deep technical detail 1", "Detailed explanation 2", "In-depth context 3", "Specific example 4"],
         "type": "process",
-        "relevance": 85,
-        "metadata": { "complexity": "medium", "priority": 1 }
-      }
+        "relevance": 95,
+        "metadata": { "complexity": "high", "priority": 1 }
+      },
+      {
+        "title": "Second Major Concept", 
+        "points": ["Deep technical detail 1", "Detailed explanation 2", "In-depth context 3", "Specific example 4"],
+        "type": "architecture",
+        "relevance": 90,
+        "metadata": { "complexity": "high", "priority": 2 }
+      },
+      { "title": "Third Concept", "points": ["..."], "type": "logic", "relevance": 85 },
+      { "title": "Fourth Concept", "points": ["..."], "type": "overview", "relevance": 80 },
+      { "title": "Fifth Concept", "points": ["..."], "type": "database", "relevance": 75 }
     ],
     "logicalFlow": [
-      {"from": "Major Theme 1", "to": "Major Theme 2", "label": "leads to"}
+      {"from": "First Major Concept", "to": "Second Major Concept", "label": "facilitates"}
     ]
   },
   "flashcards": [{"question": "Crucial Question from content?", "answer": "Detailed fact-based answer"}],
@@ -446,7 +478,8 @@ RULES:
 2. The infographic data should be high-impact, focusing on the most important technical concepts and their logical flow.
 3. Incorporate all highlighted technical terms, definitions, and important data points.
 4. Keep bullet points information-dense and highly technical.
-5. Return ONLY raw JSON without markdown formatting.`;
+5. Return ONLY raw JSON without markdown formatting.
+6. MANDATORY: Fill every cell in comparison tables and every field in infographics with relevant and descriptive text. Do not use generic placeholders or "N/A".`;
 
     try {
         const model = genAI.getGenerativeModel({
@@ -461,25 +494,30 @@ RULES:
         let responseText1 = "", responseText2 = "";
 
         try {
-            console.log("[Gemini] Fetching Part 1 (Key Points, Outline, Clusters)...");
-            const result1 = await model.generateContent(systemPrompt + "\n\n" + userPromptPart1);
+            console.log("[Gemini] Starting Parallel Analysis (Tasks 1 & 2)...");
+            
+            // Execute both prompts in parallel for maximum speed
+            const [result1, result2] = await Promise.all([
+                model.generateContent(systemPrompt + "\n\n" + userPromptPart1),
+                model.generateContent(systemPrompt + "\n\n" + userPromptPart2)
+            ]);
+
+            console.log("[Gemini] Both tasks completed. Parsing results...");
+            
             responseText1 = result1.response.text();
+            responseText2 = result2.response.text();
 
             const cleanContent1 = responseText1.replace(/^\s*```json/, '').replace(/```\s*$/, '').trim();
             parsedPart1 = JSON.parse(cleanContent1 || '{}');
-
-            console.log("[Gemini] Fetching Part 2 (Mindmap, Infographic, Tables, Flashcards)...");
-            const result2 = await model.generateContent(systemPrompt + "\n\n" + userPromptPart2);
-            responseText2 = result2.response.text();
 
             const cleanContent2 = responseText2.replace(/^\s*```json/, '').replace(/```\s*$/, '').trim();
             parsedPart2 = JSON.parse(cleanContent2 || '{}');
 
         } catch (parseError: any) {
-            console.error("[Gemini AI] JSON Parsing failed. Possible truncation due to document length.");
+            console.error("[Gemini AI] Processing or Parsing failed. Possible truncation or rate limit.");
             console.error("Part 1 text preview:", responseText1.substring(0, 500));
             console.error("Part 2 text preview:", responseText2.substring(0, 500));
-            throw new Error('The AI generated a very large summary that exceeded processing limits. Please try again or use a slightly smaller document section.');
+            throw new Error('AI processing failed. Please try a slightly smaller file or try again in a few moments.');
         }
 
         const topicClusters = (parsedPart1.topicClusters || []).map(

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -77,8 +77,9 @@ export default function SummaryViewer({
   onThemeToggle,
 }: SummaryViewerProps) {
   const [activeTab, setActiveTab] = useState<TabId>('text');
-  const [loading, setLoading] = useState(true);
+  const [activeInfographicMode, setActiveInfographicMode] = useState<'hub' | 'flow' | 'circular' | 'flowchart'>('hub');
   const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
 
   const toggleSection = (i: number) =>
@@ -101,6 +102,81 @@ export default function SummaryViewer({
     fetchSummary();
     return () => { isMounted = false; };
   }, [summaryId]);
+
+  // HOOKS MUST BE AT THE TOP - Moving all processing here
+  const docTitle = summary?.fileName?.replace('.pdf', '').replace(/\.pdf$/i, '') || 'Document';
+  const textContent = summary?.content?.text;
+
+  const keyPoints: string[] = useMemo(() => {
+    if (!summary) return [];
+    return (
+      Array.isArray(textContent)
+        ? textContent
+        : (typeof textContent === 'string'
+          ? textContent.split('\n')
+          : ['Summary content not available.'])
+    ).map((l: string) => l.replace(/^([^\w\s]+|\d+[\.\)]\s*)+\s*/, '').trim()).filter((l: string) => l.length > 5);
+  }, [summary, textContent]);
+
+  const documentOutline: {
+    heading: string;
+    level: number;
+    bullets: string[];
+    subSections: { title: string; bullets: string[] }[];
+  }[] = useMemo(() => {
+    if (!summary) return [];
+    return summary.content?.documentOutline && summary.content.documentOutline.length > 0
+      ? summary.content.documentOutline
+      : keyPoints.slice(0, 6).map((pt: string, i: number) => ({
+        heading: `Section ${i + 1}`,
+        level: 1,
+        bullets: [pt],
+        subSections: [],
+      }));
+  }, [summary, keyPoints]);
+
+  // NEW: Robust Mind Map data handling with fallback to document outline
+  const rawMindMap = summary?.content?.mindMapData;
+  const finalMindMapData = useMemo(() => {
+    if (!summary) return null;
+
+    const hasContent = (d: any) => {
+      if (!d) return false;
+      const getNodes = (obj: any) => {
+        if (!obj) return [];
+        if (Array.isArray(obj)) return obj;
+        return obj.nodes || obj.children || [];
+      };
+
+      const rootNodes = getNodes(d);
+      if (rootNodes.length === 0) return false;
+      if (Array.isArray(d) && d.length > 0 && typeof d[0] === 'object') {
+        const firstMapNodes = getNodes(d[0]);
+        if (firstMapNodes.length === 0) return false;
+      }
+      return true;
+    };
+
+    if (hasContent(rawMindMap)) {
+      if (Array.isArray(rawMindMap) && rawMindMap.length > 0) {
+        const first = rawMindMap[0];
+        const isFlatList = !first.nodes && !first.children && (first.name || first.label || first.heading);
+        if (isFlatList) return { title: docTitle, nodes: rawMindMap };
+      }
+      return rawMindMap;
+    }
+
+    if (documentOutline && documentOutline.length > 0) {
+      return {
+        title: docTitle,
+        nodes: documentOutline.map(s => ({
+          name: s.heading,
+          children: (s.bullets || []).map(b => ({ name: b }))
+        }))
+      };
+    }
+    return rawMindMap;
+  }, [summary, rawMindMap, documentOutline, docTitle]);
 
   if (loading) {
     return (
@@ -127,32 +203,7 @@ export default function SummaryViewer({
     );
   }
 
-  const docTitle = summary.fileName?.replace('.pdf', '').replace(/\.pdf$/i, '') || 'Document';
-  const textContent = summary.content?.text;
-  const keyPoints: string[] = (
-    Array.isArray(textContent)
-      ? textContent
-      : (typeof textContent === 'string'
-        ? textContent.split('\n')
-        : ['Summary content not available.'])
-  ).map((l: string) => l.replace(/^([^\w\s]+|\d+[\.\)]\s*)+\s*/, '').trim()).filter((l: string) => l.length > 5);
-
-  const documentOutline: {
-    heading: string;
-    level: number;
-    bullets: string[];
-    subSections: { title: string; bullets: string[] }[];
-  }[] =
-    summary.content?.documentOutline && summary.content.documentOutline.length > 0
-      ? summary.content.documentOutline
-      : keyPoints.slice(0, 6).map((pt: string, i: number) => ({
-        heading: `Section ${i + 1}`,
-        level: 1,
-        bullets: [pt],
-        subSections: [],
-      }));
-
-  const captureElement = async (id: string) => {
+  const captureElement = async (id: string, ratio = 2) => {
     const el = document.getElementById(id);
     if (!el) return null;
 
@@ -162,9 +213,10 @@ export default function SummaryViewer({
 
     try {
       const dataUrl = await htmlToImage.toPng(el, {
-        quality: 0.95,
-        pixelRatio: 2,
+        quality: 1.0,
+        pixelRatio: ratio,
         backgroundColor: '#0f172a',
+        style: { overflow: 'visible', imageRendering: '-webkit-optimize-contrast' }
       });
       el.style.display = originalStyle;
       return dataUrl;
@@ -177,441 +229,475 @@ export default function SummaryViewer({
 
   const handleDownloadPDF = async () => {
     try {
-      toast.info('Generating comprehensive report with visuals...', { duration: 5000 });
+      toast.info('Synthesizing comprehensive report...', { duration: 6000 });
+      const highlightTextForPDF = (text: string) => {
+        if (!text) return '';
+        return text.split(/(\s+)/).map(word => {
+          const clean = word.replace(/[^a-zA-Z0-9\-]/g, '');
+          const isImportant = /^[A-Z][a-zA-Z]{2,}$/.test(clean) || /^\d+(\.\d+)?%?$/.test(clean) || /^[A-Z]{2,}$/.test(clean) || /^[a-zA-Z]+-[a-zA-Z]+$/.test(clean);
+          return isImportant ? `<strong style="color: #60a5fa; font-weight: 700;">${word}</strong>` : `<span>${word}</span>`;
+        }).join('');
+      };
 
-      // Capture visuals
-      const mindmapImg = await captureElement('export-mindmap');
-      // Infographics are handled separately to capture all modes
+      const finalHtmlEl = document.createElement('div');
+      finalHtmlEl.style.background = '#030712';
+      finalHtmlEl.style.color = '#f8fafc';
+      finalHtmlEl.style.fontFamily = "'Inter', sans-serif";
 
-      const element = document.createElement('div');
-      element.className = 'pdf-export-container';
-      element.style.padding = '40px';
-      element.style.background = '#030712';
-      element.style.color = '#f8fafc';
-      element.style.fontFamily = 'Inter, sans-serif';
+      const modulesToInclude = ['text', 'outline', 'infographic', 'mindmap', 'flashcards', 'table'];
+      
+      for (const mType of modulesToInclude) {
+        if (['infographic', 'mindmap'].includes(mType)) {
+          const wrapperId = mType === 'infographic' ? 'export-infographic-all' : `export-${mType}-fallback`;
+          const wrapper = document.getElementById(wrapperId);
+          if (!wrapper) continue;
 
-      let html = `
-        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
-          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
-          <p style="font-size: 14px; color: #94a3b8; margin: 0;">Comprehensive Research Report: <span style="color: #60a5fa;">${docTitle}</span></p>
-        </div>
-      `;
+          const origDisplay = wrapper.style.display;
+          const origPos = wrapper.style.position;
+          const origVisibility = wrapper.style.visibility;
+          const origHeight = wrapper.style.height;
+          const origOverflow = wrapper.style.overflow;
 
-      // Key Points
-      html += `
-        <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${keyPoints.map((p: string, idx: number) => `
-              <div style="display: flex; align-items: start; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; page-break-inside: avoid;">
-                <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; line-height: 1;">${idx + 1}</div>
-                <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
+          wrapper.style.display = 'block'; 
+          wrapper.style.position = 'absolute'; 
+          wrapper.style.top = '-10000px';
+          wrapper.style.width = '1400px';
+          wrapper.style.visibility = 'visible';
+          wrapper.style.height = 'auto';
+          wrapper.style.overflow = 'visible';
+          wrapper.classList.remove('hidden');
+          
+          await new Promise(r => setTimeout(r, 1500)); // Increased stabilization for ultra-hd rendering
+
+          // Use unique attribute to avoid collisions with nested export containers
+          const items = wrapper.querySelectorAll('[data-pdf-export-target="true"]');
+          for (let i = 0; i < items.length; i++) {
+            const el = items[i] as HTMLElement;
+            const label = el.getAttribute('data-infographic-label') || mType;
+            const isCircular = label === 'Hub' || label === 'Orbit';
+
+            const img = await htmlToImage.toPng(el, { 
+              quality: 1.0, 
+              pixelRatio: 5.5, // Sync with module export for industrial clarity
+              backgroundColor: '#030712',
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'center center',
+                opacity: '1',
+                overflow: 'visible',
+                animation: 'none !important',
+                transition: 'none !important',
+                imageRendering: '-webkit-optimize-contrast'
+              }
+            });
+            const page = document.createElement('div');
+            // Minimal padding for maximum visual surface area
+            page.style.padding = '15px'; 
+            page.style.pageBreakAfter = 'always';
+            page.style.backgroundColor = '#020617';
+
+            // Dynamic styling: Standard modes are forced to one page for neatness.
+            // Dynamic styling: All infographics and mind maps are allowed to be ultra-tall 
+            // and span multiple pages to ensure maximum clarity and readability.
+            const imgStyle = 'width:100%; height:auto; display:block;';
+
+            page.innerHTML = `
+              <div style="text-align: center; margin-bottom: 15px; border-bottom: 1px solid #1e293b; padding-bottom: 10px;">
+                <p style="color:#3b82f6; margin:0; font-size: 14px; font-weight: 900; text-transform:uppercase; letter-spacing:0.1em;">OMNISTUDY AI • ${label}</p>
               </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
+              <div class="pdf-tall-image">
+                <img src="${img}" style="${imgStyle}" />
+              </div>
+            `;
+            finalHtmlEl.appendChild(page);
+          }
+          // Restore original styles
+          wrapper.style.display = origDisplay;
+          wrapper.style.position = origPos;
+          wrapper.style.visibility = origVisibility;
+          wrapper.style.height = origHeight;
+          wrapper.style.overflow = origOverflow;
+          if (origDisplay === 'none') { // Only re-add hidden if it was originally hidden
+            wrapper.classList.add('hidden');
+          }
+        } else {
+          const page = document.createElement('div');
+          page.style.padding = '40px';
+          page.style.pageBreakAfter = 'always';
+          if (mType === 'table') page.style.pageBreakBefore = 'always';
 
-      // 2. Outline
-      if (documentOutline.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 24px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">document structure</h2>
-            ${documentOutline.map((s: any, idx: number) => `
-              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; page-break-inside: avoid; background: #020617;">
-                <!-- Header -->
-                <div style="background: linear-gradient(to right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1)); padding: 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 16px;">
-                  <div style="width: 32px; height: 32px; background: #6366f1; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0;">${idx + 1}</div>
-                  <h3 style="font-size: 16px; font-weight: 800; color: #f8fafc; margin: 0;">${s.heading}</h3>
+          let html = `
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px;">
+              <h1 style="color:#3b82f6; margin:0; font-size: 32px; font-weight: 900;">OMNISTUDY AI</h1>
+              <p style="color:#94a3b8; margin:5px 0 0 0; text-transform:uppercase; font-size:12px;">${mType} Report | ${docTitle}</p>
+            </div>
+          `;
+          if (mType === 'text') {
+            html += keyPoints.map((p, i) => `
+              <div style="background:rgba(30, 58, 138, 0.2); border:1px solid rgba(30, 58, 138, 0.3); padding:20px; border-radius:18px; margin-bottom:12px; display:flex; gap:16px; align-items:center; page-break-inside:avoid;">
+                <div style="width:32px; height:32px; background:#3b82f6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; flex-shrink:0; box-shadow:0 0 15px rgba(59, 130, 246, 0.3);">${i+1}</div>
+                <p style="margin:0; font-size:15px; color:#f1f5f9; line-height:1.6; font-weight:500;">${highlightTextForPDF(p)}</p>
+              </div>
+            `).join('');
+          } else if (mType === 'outline') {
+            html += documentOutline.map((s, i) => `
+              <div style="margin-bottom:20px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+                <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; gap:16px;">
+                  <div style="width:32px; height:32px; background:#6366f1; color:white; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; box-shadow:0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink:0;">${i+1}</div>
+                  <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${s.heading}</h4>
                 </div>
-                <!-- Content -->
-                <div style="padding: 24px; background: rgba(15, 23, 42, 0.5);">
-                  <div style="margin-bottom: 20px;">
-                    ${(s.bullets || []).map((b: string) => `
-                        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; gap: 12px;">
-                          <span style="display: block; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; margin-top: 8px; flex-shrink: 0;"></span>
-                          <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; font-weight: 500;">${b}</p>
-                        </div>
-                    `).join('')}
-                  </div>
-                  ${(s.subSections || []).map((sub: any) => `
-                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 2px solid #312e81; padding-top: 4px; padding-bottom: 4px;">
-                      <h4 style="font-size: 11px; font-weight: 900; color: #818cf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">${sub.title}</h4>
-                      <div style="padding-left: 4px;">
-                        ${(sub.bullets || []).map((sb: string) => `
-                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px; gap: 10px;">
-                            <span style="color: #475569; font-size: 12px;">—</span>
-                            <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 400;">${sb}</p>
-                          </div>
-                        `).join('')}
+                <div style="padding:20px; background:#000;">
+                  ${s.bullets.map(b => `<div style="display:flex; gap:12px; margin-bottom:12px; page-break-inside:avoid;"><div style="width:6px; height:6px; background:#818cf8; border-radius:50%; margin-top:6px; flex-shrink:0;"></div><p style="margin:0; color:#cbd5e1; font-size:14px; line-height:1.5;">${b}</p></div>`).join('')}
+                  ${(s.subSections || []).map(sub => `
+                    <div style="margin-left:24px; border-left:2px solid #312e81; padding:5px 0 5px 15px; margin-top:15px; background:rgba(99, 102, 241, 0.05); border-radius:0 8px 8px 0; page-break-inside:avoid;">
+                      <h5 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:#818cf8; text-transform:uppercase; letter-spacing:0.05em;">${sub.title}</h5>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${sub.bullets.map(sb => `<p style="margin:0; color:#94a3b8; font-size:13px; line-height:1.4; page-break-inside:avoid;">— ${sb}</p>`).join('')}
                       </div>
                     </div>
                   `).join('')}
                 </div>
               </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      // 3. Mind Maps (Support Multiple)
-      const mindmapWrapper = document.getElementById('export-mindmap');
-      if (mindmapWrapper) {
-        const originalDisplay = mindmapWrapper.style.display;
-        mindmapWrapper.style.display = 'block';
-        const innerMaps = mindmapWrapper.querySelectorAll('[data-mindmap-content="true"]');
-
-        for (let i = 0; i < innerMaps.length; i++) {
-          const mapEl = innerMaps[i] as HTMLElement;
-          const mapImg = await htmlToImage.toPng(mapEl, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#0f172a',
-            style: { transform: 'scale(1)', padding: '20px' }
-          });
-
-          html += `
-            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: 10px; box-sizing: border-box;">
-              <div style="width: 96%; border-radius: 24px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 15px 45px rgba(0,0,0,0.6);">
-                <img src="${mapImg}" style="width: 100%; height: auto; display: block;" />
-              </div>
-              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                OmniStudy AI • Mind Map ${i + 1}
-              </div>
-            </div>
-          `;
+            `).join('');
+          } else if (mType === 'flashcards') {
+            const fs = summary?.content?.flashcards || [];
+            html += fs.map((f: any) => `<div style="border-left:6px solid #ec4899; background:#020617; border: 1px solid #1e293b; padding:18px; margin-bottom:12px; border-radius:10px; page-break-inside:avoid;"><p style="font-weight:bold; margin:0 0 8px 0; color:#fdf2f8; font-size:15px;">Q: ${f.question}</p><p style="color:#fbcfe8; margin:0; font-size:14px; line-height:1.5;">A: ${f.answer}</p></div>`).join('');
+          } else if (mType === 'table') {
+            const tables = summary?.content?.comparativeTable || [];
+            html += tables.map((table: any) => {
+              const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
+              const rows = table.rows || (Array.isArray(table) ? table : []);
+              return `
+                <div style="margin-bottom:30px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+                  <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b;">
+                    <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${table.title || 'Comparison Table'}</h4>
+                  </div>
+                  <div style="padding:0; background:#000;">
+                    <table style="width:100%; border-collapse:collapse; color:#cbd5e1; font-size:11px; table-layout:auto;">
+                      <thead>
+                        <tr style="background:#0f172a; border-bottom:1px solid #1e293b;">
+                          <th style="padding:12px; border:1px solid #1e293b; color:#94a3b8; text-align:center; width:40px;">#</th>
+                          ${headers.map((h: string) => `<th style="padding:12px; border:1px solid #1e293b; color:#60a5fa; text-align:left; font-weight:700;">${h.toUpperCase()}</th>`).join('')}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows.map((row: any, rIdx: number) => {
+                          const cells = Array.isArray(row) ? row : Object.values(row);
+                          return `
+                            <tr>
+                              <td style="padding:12px; border:1px solid #1e293b; text-align:center; color:#475569; font-family:monospace;">${rIdx + 1}</td>
+                              ${cells.map((cell: any, cIdx: number) => `
+                                <td style="padding:12px; border:1px solid #1e293b; vertical-align:top; line-height:1.5; ${cIdx === 0 ? 'color:#60a5fa; font-weight:700;' : ''}">
+                                  ${cell || ''}
+                                </td>
+                              `).join('')}
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+          page.innerHTML = html;
+          finalHtmlEl.appendChild(page);
         }
-        mindmapWrapper.style.display = originalDisplay;
       }
 
-      // 4. Infographics (Capture all 4 modes)
-      const infraWrapper = document.getElementById('export-infographic-all');
-      if (infraWrapper) {
-        const originalDisplay = infraWrapper.style.display;
-        infraWrapper.style.display = 'block';
-        const innerInfras = infraWrapper.querySelectorAll('[data-infographic-content="true"]');
-
-        for (let i = 0; i < innerInfras.length; i++) {
-          const infraEl = innerInfras[i] as HTMLElement;
-          const infraType = infraEl.getAttribute('data-infographic-view') || 'Visual';
-          const infraImg = await htmlToImage.toPng(infraEl, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#0f172a',
-            style: { transform: 'scale(1)', padding: '20px' }
-          });
-
-          const typeLabels: Record<string, string> = {
-            hub: 'Knowledge Hub',
-            flow: 'Logical Interaction Flow',
-            circular: 'Conceptual Orbit',
-            flowchart: 'Structural Progression'
-          };
-
-          const isSteps = infraType === 'flow';
-          const isFlowchart = infraType === 'flowchart';
-
-          html += `
-            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: ${isFlowchart || isSteps ? '40px' : '10px'}; box-sizing: border-box;">
-               <div style="width: ${isFlowchart ? '42%' : isSteps ? '75%' : '96%'}; ${isFlowchart ? 'max-width: 95mm;' : isSteps ? 'max-height: 265mm;' : ''} border-radius: 20px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 12px 40px rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;">
-                  <img src="${infraImg}" style="max-width: 100%; max-height: ${isSteps ? '260mm' : '100%'}; width: auto; height: auto; display: block; object-fit: contain;" />
-               </div>
-               <div style="margin-top: ${isFlowchart || isSteps ? '30px' : '25px'}; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                  OmniStudy AI • ${typeLabels[infraType] || 'Visual Infographic'}
-               </div>
-            </div>
-          `;
-        }
-        infraWrapper.style.display = originalDisplay;
-      }
-
-      // 5. Flashcards
-      const flashcards = summary.content?.flashcards || [];
-      if (flashcards.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">flashcards</h2>
-              <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                  ${flashcards.map((f: any, i: number) => `
-                      <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899; margin-bottom: 12px; page-break-inside: avoid;">
-                          <p style="font-weight: 700; color: #fdf2f8; margin-bottom: 8px; font-size: 15px;">Q: ${f.question}</p>
-                          <p style="color: #fbcfe8; font-size: 14px; line-height: 1.6; border-top: 1px dashed #500724; padding-top: 8px;">A: ${f.answer}</p>
-                      </div>
-                  `).join('')}
-              </div>
-          </div>
-        `;
-      }
-
-      // 6. Comparative Tables
-      const tables = summary.content?.comparativeTable || [];
-      if (tables.length > 0) {
-        tables.forEach((table: any, i: number) => {
-          const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
-          const rows = table.rows || (Array.isArray(table) ? table : []);
-          html += `
-            <div style="page-break-before: always; padding: 20px; background: #030712; min-height: 280mm;">
-              <h2 style="font-size: 20px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 700; letter-spacing: 0.5px;">comparative analysis ${tables.length > 1 ? (i + 1) : ''}</h2>
-              <div style="background: #020617; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #cbd5e1;">
-                  <thead><tr style="background: #000000;">
-                    ${headers.map((h: string) => `<th style="border: 1px solid #1e293b; padding: 14px; text-align: left; color: #60a5fa;">${h}</th>`).join('')}
-                  </tr></thead>
-                  <tbody>
-                    ${rows.map((row: any) => `
-                      <tr>${(Array.isArray(row) ? row : Object.values(row)).map((cell: any) => `<td style="border: 1px solid #1e293b; padding: 14px;">${cell || ''}</td>`).join('')}</tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                OmniStudy AI • Comparison Data
-              </div>
-            </div>
-          `;
-        });
-      }
-
-      element.innerHTML = html;
       const opt = {
-        margin: 0,
-        filename: `${docTitle}_Full_Report.pdf`,
+        margin: 0, filename: `${docTitle}_Full_Report.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+        html2canvas: { 
+          scale: 1.0, 
+          useCORS: true, 
+          backgroundColor: '#030712',
+          logging: false,
+          scrollX: 0,
+          scrollY: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak: { mode: ['css', 'legacy'] }
       };
 
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
-      await html2pdf().set(opt).from(element).save();
-      toast.success('Full report exported!');
+      await html2pdf().set(opt).from(finalHtmlEl).save();
+      toast.success('Comprehensive report downloaded!');
     } catch (err: any) {
-      console.error('PDF failure:', err);
-      toast.error('Export failed');
+      console.error('Full PDF Export failed:', err);
+      toast.error('Full export failed');
     }
   };
 
   const handleDownloadModulePDF = async () => {
     try {
-      const isVisual = ['mindmap', 'infographic'].includes(activeTab);
-      toast.info(`Preparing ${activeTab} ${isVisual ? 'image' : 'report'}...`);
+      toast.info(`Exporting ${activeTab}...`);
+      
+      const highlightTextForPDF = (text: string) => {
+        if (!text) return '';
+        return text.split(/(\s+)/).map(word => {
+          const clean = word.replace(/[^a-zA-Z0-9\-]/g, '');
+          const isImportant = /^[A-Z][a-zA-Z]{2,}$/.test(clean) || /^\d+(\.\d+)?%?$/.test(clean) || /^[A-Z]{2,}$/.test(clean) || /^[a-zA-Z]+-[a-zA-Z]+$/.test(clean);
+          return isImportant ? `<strong style="color: #60a5fa; font-weight: 700;">${word}</strong>` : `<span>${word}</span>`;
+        }).join('');
+      };
 
-      if (isVisual) {
-        const wrapper = document.getElementById(`export-${activeTab}`);
+      // SPECIAL HANDLING: Infographics download as multiple high-res PNGs
+      if (activeTab === 'infographic') {
+        const wrapper = document.getElementById('export-infographic-all');
         if (!wrapper) return;
+        const subItems = wrapper.querySelectorAll('[data-pdf-export-target="true"]');
+        
+        wrapper.classList.remove('hidden');
+        wrapper.style.visibility = 'visible';
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '-10000px';
 
-        // NEW: Special handling for Mind Maps - Export ALL maps as a multi-page PDF
-        if (activeTab === 'mindmap') {
-          const innerMaps = wrapper.querySelectorAll('[data-mindmap-content="true"]');
-          if (innerMaps.length > 0) {
-            toast.info(`Generating PDF with ${innerMaps.length} mind maps...`);
+        await new Promise(r => setTimeout(r, 1000));
 
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.background = '#030712';
-            pdfContainer.style.padding = '20px';
+        for (let i = 0; i < subItems.length; i++) {
+          const target = subItems[i] as HTMLElement;
+          const label = target.getAttribute('data-infographic-label') || 'Module';
+          const modeName = label === 'Hub' ? 'hub' : label === 'Steps' ? 'flow' : label === 'Orbit' ? 'circular' : 'flowchart';
+          
+          if (modeName !== activeInfographicMode) continue;
+          
+          const saveName = modeName === 'hub' ? 'KnowledgeHub' : modeName === 'flow' ? 'ProcessSteps' : modeName === 'circular' ? 'ConceptualOrbit' : 'ActionFlow';
 
-            for (let i = 0; i < innerMaps.length; i++) {
-              const mapEl = innerMaps[i] as HTMLElement;
-              const mapImg = await htmlToImage.toPng(mapEl, {
-                quality: 1.0,
-                pixelRatio: 2,
-                backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
-                style: { transform: 'scale(1)', margin: '0', padding: '40px' },
-                cacheBust: true,
-              });
+          const usePdf = (modeName === 'flow' || modeName === 'flowchart');
 
-              const page = document.createElement('div');
-              page.style.width = '297mm';
-              page.style.height = '209.5mm'; // Slightly less than 210 to be safe
-              page.style.position = 'relative';
-              page.style.display = 'flex';
-              page.style.flexDirection = 'column';
-              page.style.justifyContent = 'center';
-              page.style.alignItems = 'center';
-              page.style.backgroundColor = '#030712';
-              page.style.boxSizing = 'border-box';
-              if (i > 0) page.style.pageBreakBefore = 'always';
-
-              page.innerHTML = `
-                <div style="width: 92%; max-height: 82%; border-radius: 20px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                  <img src="${mapImg}" style="width: 100%; height: auto; max-height: 100%; display: block;" />
+          // Capture as High-Res Image FIRST (This is more reliable than direct PDF capture for complex SVGs)
+          const imgData = await htmlToImage.toPng(target, { 
+            quality: 1.0, 
+            pixelRatio: 5.5, // Ultra-wide high density capture
+            backgroundColor: theme === 'dark' ? '#030712' : '#ffffff',
+            style: { transform: 'scale(1)', opacity: '1', animation: 'none !important', transition: 'none !important' }
+          });          if (usePdf) {
+            const pdfEl = document.createElement('div');
+            pdfEl.style.padding = '0';
+            pdfEl.style.background = '#030712';
+            pdfEl.style.minHeight = '297mm'; // A4 Height
+            pdfEl.style.display = 'flex';
+            pdfEl.style.flexDirection = 'column';
+            
+            pdfEl.innerHTML = `
+              <div style="padding: 24px 32px; background: #030712; color: #fff; font-family: 'Inter', sans-serif; flex: 1; display: flex; flex-direction: column;">
+                <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #1e293b; padding-bottom: 16px; flex-shrink: 0;">
+                  <h1 style="color:#3b82f6; margin:0; font-size: 28px; font-weight: 900; letter-spacing: -0.02em;">OMNISTUDY AI</h1>
+                  <p style="color:#94a3b8; margin:8px 0 0 0; text-transform:uppercase; font-size:11px; font-weight: 800; letter-spacing: 0.15em;">${saveName.replace(/([A-Z])/g, ' $1').trim()} | ${docTitle}</p>
                 </div>
-                <div style="position: absolute; bottom: 15px; width: 100%; text-align: center; color: #64748b; font-family: Inter, sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em;">
-                  OmniStudy AI • Mind Map ${i + 1}
+                
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px;">
+                  <div style="width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.7); border: 1px solid #1e293b; background: #030712;">
+                    <img src="${imgData}" style="width: 100%; height: auto; display: block; object-fit: contain; image-rendering: -webkit-optimize-contrast;" />
+                  </div>
                 </div>
-              `;
-              pdfContainer.appendChild(page);
-            }
 
-            const pdfOpt = {
-              margin: 0,
-              filename: `MindMaps_${docTitle.replace(/\s+/g, '_')}.pdf`,
-              image: { type: 'jpeg' as const, quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const },
-              pagebreak: { mode: 'legacy' }
-            };
+                <div style="text-align: center; margin-top: 20px; font-size: 9px; color: #475569; letter-spacing: 0.05em; font-weight: 600;">
+                  DOCUMENT VISUALIZATION SYSTEM | HIGH-FIDELITY STUDY MODULE
+                </div>
+              </div>
+            `;
 
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
-            await html2pdf().set(pdfOpt).from(pdfContainer).save();
-            toast.success('All mind maps saved to PDF!');
-            return;
+            const pdfOpt = {
+              margin: 0, 
+              filename: `Infographic_${saveName}_${docTitle.replace(/\s+/g, '_')}.pdf`,
+              image: { type: 'png' as const, quality: 1.0 },
+              html2canvas: { scale: 2.0, useCORS: true, backgroundColor: '#030712' },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as any },
+              pagebreak: { mode: ['css', 'legacy'] }
+            };
+            await html2pdf().set(pdfOpt).from(pdfEl).save();
+          } else {
+            const link = document.createElement('a');
+            link.download = `Infographic_${saveName}_${docTitle.replace(/\s+/g, '_')}.png`;
+            link.href = imgData;
+            link.click();
           }
+          await new Promise(r => setTimeout(r, 400));
         }
-
-        // Existing logic for single-image visual (Infographic)
-        const innerContent = wrapper.querySelector(`[data-${activeTab}-content="true"]`) as HTMLElement;
-        const targetEl = innerContent || wrapper;
-
-        const dataUrl = await htmlToImage.toPng(targetEl, {
-          quality: 1.0,
-          pixelRatio: 3,
-          backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
-          style: {
-            transform: 'scale(1)',
-            transformOrigin: 'center top',
-            margin: '0',
-            padding: activeTab === 'mindmap' ? '40px' : '0'
-          },
-          cacheBust: true,
-        });
-
-        const link = document.createElement('a');
-        link.download = `${activeTab === 'mindmap' ? 'MindMap' : 'Infographic'}_${docTitle.replace(/\s+/g, '_')}.png`;
-        link.href = dataUrl;
-        link.click();
-        toast.success(`${activeTab === 'mindmap' ? 'Mind Map' : 'Infographic'} saved as full image!`);
+        
+        wrapper.classList.add('hidden');
+        toast.success(`Success! ${activeInfographicMode.toUpperCase()} module saved.`);
         return;
       }
 
-      const img = null; // No image needed for text-based PDF modules
+      // SPECIAL HANDLING: Mind Map downloads as high-res PDF (Multi-page)
+      if (activeTab === 'mindmap') {
+        const wrapper = document.getElementById('export-mindmap-fallback');
+        if (!wrapper) return;
+        const subItems = wrapper.querySelectorAll('[data-pdf-export-target="true"]');
+        if (subItems.length === 0) return;
 
+        wrapper.classList.remove('hidden');
+        wrapper.style.visibility = 'visible';
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '-10000px';
+        
+        await new Promise(r => setTimeout(r, 1200));
+
+        const pdfEl = document.createElement('div');
+        pdfEl.style.background = '#030712';
+        
+        for (let i = 0; i < subItems.length; i++) {
+          const target = subItems[i] as HTMLElement;
+          const label = target.getAttribute('data-infographic-label') || 'Mind Map';
+          const nodeCount = target.querySelectorAll('foreignObject h3').length;
+
+          // Capture as High-Res Image FIRST
+          const imgData = await htmlToImage.toPng(target, { 
+            quality: 1.0, 
+            pixelRatio: 4.5, // High density for mindmaps
+            backgroundColor: theme === 'dark' ? '#030712' : '#ffffff',
+            style: { transform: 'scale(1)', opacity: '1', animation: 'none !important', transition: 'none !important' }
+          });
+
+          const pg = document.createElement('div');
+          pg.style.width = '210mm'; // Standard A4 Portrait Width
+          pg.style.boxSizing = 'border-box';
+          pg.style.background = '#030712';
+          pg.style.display = 'flex';
+          pg.style.flexDirection = 'column';
+          if (i > 0) pg.style.pageBreakBefore = 'always';
+          
+          pg.innerHTML = `
+            <div style="padding: 40px 32px; background: #030712; color: #fff; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; box-sizing: border-box;">
+              <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e293b; padding-bottom: 16px; flex-shrink: 0;">
+                <h1 style="color:#3b82f6; margin:0; font-size: 26px; font-weight: 900; letter-spacing: -0.02em;">OMNISTUDY AI</h1>
+                <p style="color:#94a3b8; margin:8px 0 0 0; text-transform:uppercase; font-size:10px; font-weight: 800; letter-spacing: 0.15em;">${label} | ${docTitle} | MODULE ${i+1}</p>
+              </div>
+              
+              <div style="width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.7); border: 1.5px solid #1e293b; background: #030712;">
+                <img src="${imgData}" style="width: 100%; height: auto; display: block; image-rendering: -webkit-optimize-contrast;" />
+              </div>
+
+              <div style="text-align: center; margin-top: 30px; font-size: 9px; color: #475569; letter-spacing: 0.05em; font-weight: 600; flex-shrink: 0; text-transform: uppercase;">
+                CONCEPTUAL NETWORK SYSTEM | ${nodeCount} SEGMENTS ANALYZED
+              </div>
+            </div>
+          `;
+          pdfEl.appendChild(pg);
+          await new Promise(r => setTimeout(r, 400));
+        }
+
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
+        const pdfOpt = {
+          margin: 0, 
+          filename: `MindMaps_${docTitle.replace(/\s+/g, '_')}.pdf`,
+          image: { type: 'png' as const, quality: 1.0 },
+          html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#030712' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as any },
+          pagebreak: { mode: ['css', 'legacy'] }
+        };
+        await html2pdf().set(pdfOpt).from(pdfEl).save();
+        
+        wrapper.classList.add('hidden');
+        toast.success(`Success! All mind maps saved as a multi-page PDF.`);
+        return;
+      }
+
+      // STANDARD HANDLING: Other modules download as PDF
       const element = document.createElement('div');
       element.style.padding = '40px';
       element.style.background = '#030712';
       element.style.color = '#f8fafc';
-      element.style.fontFamily = 'Inter, sans-serif';
+      element.style.fontFamily = "'Inter', sans-serif";
 
       let html = `
-        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
-          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
-          <p style="font-size: 14px; color: #94a3b8; margin: 0; text-transform: uppercase;">MODULE: <span style="color: #60a5fa; font-weight: bold;">${activeTab}</span> | ${docTitle}</p>
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px;">
+          <h1 style="color:#3b82f6; margin:0; font-size: 32px; font-weight: 900;">OMNISTUDY AI</h1>
+          <p style="color:#94a3b8; margin:5px 0 0 0; text-transform:uppercase; font-size:12px;">${activeTab} Report | ${docTitle}</p>
         </div>
       `;
 
-      if (img) {
-        html += `
-          <div style="background: #0f172a; padding: 25px; border-radius: 24px; border: 1px solid #1e293b; page-break-inside: avoid;">
-             <div style="border-radius: 12px; overflow: hidden; background: #0f172a; border: 1px solid #312e81;">
-                <img src="${img}" style="width: 100%; display: block; border-radius: 8px;" />
-             </div>
+      if (activeTab === 'text') {
+        html += keyPoints.map((p, i) => `
+          <div style="background:rgba(30, 58, 138, 0.2); border:1px solid rgba(30, 58, 138, 0.3); padding:20px; border-radius:18px; margin-bottom:12px; display:flex; gap:16px; align-items:center; page-break-inside:avoid;">
+            <div style="width:32px; height:32px; background:#3b82f6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; flex-shrink:0; box-shadow:0 0 15px rgba(59, 130, 246, 0.3);">${i+1}</div>
+            <p style="margin:0; font-size:15px; color:#f1f5f9; line-height:1.6; font-weight:500;">${highlightTextForPDF(p)}</p>
           </div>
-        `;
-      } else if (activeTab === 'text') {
-        html += `
-          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
-            ${keyPoints.map((p: string, idx: number) => `
-              <div style="display: flex; align-items: center; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; margin-bottom: 12px; page-break-inside: avoid;">
-                <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">${idx + 1}</div>
-                <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
-              </div>
-            `).join('')}
-          </div>
-        `;
+        `).join('');
       } else if (activeTab === 'outline') {
-        html += `
-          <div style="background: #0f172a; padding: 25px; border-radius: 24px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">document structure</h2>
-            ${documentOutline.map((s: any, idx: number) => `
-              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; page-break-inside: avoid; background: #020617;">
-                <div style="background: linear-gradient(to right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1)); padding: 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 16px;">
-                  <div style="width: 32px; height: 32px; background: #6366f1; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0;">${idx + 1}</div>
-                  <h3 style="font-size: 16px; font-weight: 800; color: #f8fafc; margin: 0;">${s.heading}</h3>
+        html += documentOutline.map((s, i) => `
+          <div style="margin-bottom:20px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+            <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; gap:16px;">
+              <div style="width:32px; height:32px; background:#6366f1; color:white; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; box-shadow:0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink:0;">${i+1}</div>
+              <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${s.heading}</h4>
+            </div>
+            <div style="padding:20px; background:#000;">
+              ${s.bullets.map(b => `<div style="display:flex; gap:12px; margin-bottom:12px; page-break-inside:avoid;"><div style="width:6px; height:6px; background:#818cf8; border-radius:50%; margin-top:6px; flex-shrink:0;"></div><p style="margin:0; color:#cbd5e1; font-size:14px; line-height:1.5;">${b}</p></div>`).join('')}
+              ${(s.subSections || []).map(sub => `
+                <div style="margin-left:24px; border-left:2px solid #312e81; padding:5px 0 5px 15px; margin-top:15px; background:rgba(99, 102, 241, 0.05); border-radius:0 8px 8px 0; page-break-inside:avoid;">
+                  <h5 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:#818cf8; text-transform:uppercase; letter-spacing:0.05em;">${sub.title}</h5>
+                  <div style="display:flex; flex-direction:column; gap:6px;">
+                    ${sub.bullets.map(sb => `<p style="margin:0; color:#94a3b8; font-size:13px; line-height:1.4; page-break-inside:avoid;">— ${sb}</p>`).join('')}
+                  </div>
                 </div>
-                <div style="padding: 24px; background: rgba(15, 23, 42, 0.5);">
-                   ${(s.bullets || []).map((b: string) => `
-                      <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;">
-                        <span style="width: 6px; height: 6px; background: #818cf8; border-radius: 50%; margin-top: 8px; flex-shrink: 0;"></span>
-                        <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; font-weight: 500;">${b}</p>
-                      </div>
-                   `).join('')}
-                   ${(s.subSections || []).map((sub: any) => `
-                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 2px solid #312e81; padding-top: 4px; padding-bottom: 4px;">
-                      <h4 style="font-size: 11px; font-weight: 900; color: #818cf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">${sub.title}</h4>
-                      <div style="padding-left: 4px;">
-                        ${(sub.bullets || []).map((sb: string) => `
-                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px; gap: 10px;">
-                            <span style="color: #475569; font-size: 12px;">—</span>
-                            <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 400;">${sb}</p>
-                          </div>
-                        `).join('')}
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
-        `;
-      }
-      else if (activeTab === 'flashcards') {
-        const flashcards = summary.content?.flashcards || [];
-        html += `
-          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">flashcards</h2>
-            ${flashcards.map((f: any, i: number) => `
-              <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899; margin-bottom: 12px; page-break-inside: avoid;">
-                <p style="font-weight: 700; color: #fdf2f8; margin-bottom: 8px;">Q: ${f.question}</p>
-                <p style="color: #fbcfe8; font-size: 14px; border-top: 1px dashed #500724; padding-top: 8px;">A: ${f.answer}</p>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      } else if (activeTab === 'table') {
-        const tables = summary.content?.comparativeTable || [];
-        html += `
-          <div style="background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">comparison</h2>
-            ${tables.map((table: any) => {
+        `).join('');
+      } else if (activeTab === 'flashcards') {
+        html += (summary?.content?.flashcards || []).map((f: any) => `<div style="border-left:6px solid #ec4899; background:#020617; border: 1px solid #1e293b; padding:18px; margin-bottom:12px; border-radius:10px; page-break-inside:avoid;"><p style="font-weight:bold; margin:0 0 8px 0; color:#fdf2f8; font-size:15px;">Q: ${f.question}</p><p style="color:#fbcfe8; margin:0; font-size:14px; line-height:1.5;">A: ${f.answer}</p></div>`).join('');
+      } else if (activeTab === 'table' || (activeTab as string) === 'comparative') {
+        const tables = summary?.content?.comparativeTable || [];
+        html += tables.map((table: any) => {
           const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
           const rows = table.rows || (Array.isArray(table) ? table : []);
           return `
-                <div style="margin-bottom: 25px; page-break-inside: avoid; background: #020617; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1;">
-                    <thead><tr style="background: #000000;">
-                      ${headers.map((h: string) => `<th style="border: 1px solid #1e293b; padding: 10px; text-align: left; color: #60a5fa;">${h}</th>`).join('')}
-                    </tr></thead>
-                    <tbody>
-                      ${rows.map((row: any) => `
-                        <tr>${(Array.isArray(row) ? row : Object.values(row)).map((cell: any) => `<td style="border: 1px solid #1e293b; padding: 10px;">${cell || ''}</td>`).join('')}</tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              `;
-        }).join('')}
-          </div>
-        `;
+            <div style="margin-bottom:30px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+              <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b;">
+                <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${table.title || 'Comparison Table'}</h4>
+              </div>
+              <div style="padding:0; background:#000;">
+                <table style="width:100%; border-collapse:collapse; color:#cbd5e1; font-size:11px;">
+                  <thead>
+                    <tr style="background:#0f172a; border-bottom:1px solid #1e293b;">
+                      <th style="padding:12px; border:1px solid #1e293b; color:#94a3b8; text-align:center; width:40px;">#</th>
+                      ${headers.map((h: string) => `<th style="padding:12px; border:1px solid #1e293b; color:#60a5fa; text-align:left; font-weight:700;">${h.toUpperCase()}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows.map((row: any, rIdx: number) => {
+                      const cells = Array.isArray(row) ? row : Object.values(row);
+                      return `
+                        <tr>
+                          <td style="padding:12px; border:1px solid #1e293b; text-align:center; color:#475569; font-family:monospace;">${rIdx + 1}</td>
+                          ${cells.map((cell: any, cIdx: number) => `
+                            <td style="padding:12px; border:1px solid #1e293b; vertical-align:top; line-height:1.5; ${cIdx === 0 ? 'color:#60a5fa; font-weight:700;' : ''}">
+                              ${cell || ''}
+                            </td>
+                          `).join('')}
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }).join('');
       }
 
       element.innerHTML = html;
-      const opt = {
-        margin: 10,
-        filename: `${docTitle}_${activeTab}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: (['table'].includes(activeTab) ? 'landscape' : 'portrait') as 'portrait' | 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
-      await html2pdf().set(opt).from(element).save();
-      toast.success(`${activeTab} report exported!`);
+      const pdfOpt = {
+        margin: 10, filename: `${activeTab}_Report_${docTitle.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#030712' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: (activeTab === 'table' ? 'landscape' : 'portrait') as any },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+      await html2pdf().set(pdfOpt).from(element).save();
+      toast.success(`${activeTab} saved!`);
     } catch (err: any) {
-      console.error('Partial PDF failure:', err);
+      console.error('Module export error:', err);
       toast.error('Export failed');
     }
   };
@@ -830,12 +916,12 @@ export default function SummaryViewer({
 
             {/* Tab: Mindmap */}
             <div id="export-mindmap" className={activeTab === 'mindmap' ? 'block' : 'hidden'}>
-              <MindMapViewer title={docTitle} data={summary.content?.mindMapData} theme={theme} />
+              <MindMapViewer title={docTitle} data={finalMindMapData} theme={theme} />
             </div>
 
             {/* Tab: Infographic */}
             <div id="export-infographic" className={activeTab === 'infographic' ? 'block' : 'hidden'}>
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} />
+              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} onViewModeChange={setActiveInfographicMode} />
             </div>
 
             {/* Tab: Flashcards */}
@@ -848,12 +934,17 @@ export default function SummaryViewer({
               <ComparativeTableViewer title={docTitle} data={summary.content?.comparativeTable} theme={theme} />
             </div>
 
-            {/* Hidden: All Infographic Modes for Export */}
+            {/* Hidden: All Infographic Modes for Export (Used by handleDownloadPDF) */}
             <div id="export-infographic-all" className="hidden pointer-events-none absolute" style={{ top: -10000, width: '1400px' }}>
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="hub" />
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="flow" />
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="circular" />
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="flowchart" />
+              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="hub" forcedFanned={true} contentOnly={true} />
+              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="flow" forcedFanned={true} contentOnly={true} />
+              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="circular" forcedFanned={true} contentOnly={true} />
+              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} forcedViewMode="flowchart" forcedFanned={true} contentOnly={true} />
+            </div>
+
+            {/* Hidden: Mindmap for Full Export Fallback */}
+            <div id="export-mindmap-fallback" className="hidden pointer-events-none absolute" style={{ top: -10000, width: '1400px' }}>
+              <MindMapViewer title={docTitle} data={finalMindMapData} theme={theme} contentOnly={true} />
             </div>
           </div>
         </div>

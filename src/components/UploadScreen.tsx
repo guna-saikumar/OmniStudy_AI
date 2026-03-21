@@ -49,6 +49,11 @@ export default function UploadScreen({
     if (!allowedTypes.includes(file.type)) {
       return 'Please upload a PDF, TXT, PPT, or DOCX file';
     }
+
+    if (file.size > 50 * 1024 * 1024) {
+      return 'File size exceeds 50MB limit. Please upload a smaller file.';
+    }
+
     return null;
   };
 
@@ -323,15 +328,15 @@ export default function UploadScreen({
               <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                  Maximum file size is 50MB
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                  Maximum 100 pages per document
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-blue-500" />
                   Accepts PDF, TXT, DOCX, and PPT formats
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                  Scanned or text-based PDFs supported
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                  Best results with clear, well-formatted content
                 </li>
               </ul>
             </CardContent>
