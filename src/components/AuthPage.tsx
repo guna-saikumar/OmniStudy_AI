@@ -110,7 +110,7 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
       {/* Auth Card */}
       <div className="w-full max-w-lg border-2 border-blue-500/30 rounded-3xl bg-slate-900 p-6 sm:p-12">
         {/* Logo */}
-        <div className="flex justify-center items-center gap-3 mb-12">
+        <div className="flex justify-center items-center gap-1.5 mb-12">
           <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-8 h-8 sm:w-10 sm:h-10" />
           <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
             <span style={{ color: '#1d51df' }}>O</span>

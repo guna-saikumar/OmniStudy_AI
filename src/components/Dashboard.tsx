@@ -412,7 +412,7 @@ export default function Dashboard({
       {/* Top Navigation */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
             <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
               <span style={{ color: '#1d51df' }}>O</span>
@@ -597,7 +597,7 @@ export default function Dashboard({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Key Points */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-blue-100 dark:bg-blue-950 p-2 rounded">
                   <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -611,7 +611,7 @@ export default function Dashboard({
 
             {/* Outline */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-indigo-100 dark:bg-indigo-950 p-2 rounded">
                   <List className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
@@ -625,7 +625,7 @@ export default function Dashboard({
 
             {/* Infographic */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-orange-100 dark:bg-orange-950 p-2 rounded">
                   <ImageIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
@@ -639,7 +639,7 @@ export default function Dashboard({
 
             {/* Mind Map */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-purple-100 dark:bg-purple-950 p-2 rounded">
                   <Network className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
@@ -653,7 +653,7 @@ export default function Dashboard({
 
             {/* Flashcards */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-pink-100 dark:bg-pink-950 p-2 rounded">
                   <SquareStack className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                 </div>
@@ -667,7 +667,7 @@ export default function Dashboard({
 
             {/* Comparison */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
                   <Table className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                 </div>
@@ -742,7 +742,7 @@ export default function Dashboard({
             {/* Feature 1 - Free to Use */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <Gift className="h-5 w-5 text-green-500" />
                   <CardTitle className="text-base">Free to Use</CardTitle>
                 </div>
@@ -758,7 +758,7 @@ export default function Dashboard({
             {/* Feature 2 - Auto Summary */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <Sparkles className="h-5 w-5 text-emerald-500" />
                   <CardTitle className="text-base">Auto Summary</CardTitle>
                 </div>
@@ -774,7 +774,7 @@ export default function Dashboard({
             {/* Feature 3 - Export */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <Download className="h-5 w-5 text-orange-500" />
                   <CardTitle className="text-base">Export</CardTitle>
                 </div>
@@ -790,7 +790,7 @@ export default function Dashboard({
             {/* Feature 4 - Share */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <Share2 className="h-5 w-5 text-pink-500" />
                   <CardTitle className="text-base">Share</CardTitle>
                 </div>
@@ -806,7 +806,7 @@ export default function Dashboard({
             {/* Feature 5 - History */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <FileArchive className="h-5 w-5 text-cyan-500" />
                   <CardTitle className="text-base">History</CardTitle>
                 </div>
