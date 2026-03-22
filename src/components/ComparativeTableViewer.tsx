@@ -61,21 +61,22 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
   return (
     <div className="rounded-[2rem] bg-[#030712] w-full" style={{ display: 'block' }}>
       <Card className="overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950 transition-all hover:shadow-md h-full rounded-[2rem]">
-      <CardHeader className="bg-gray-50/80 dark:bg-gray-900/80 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between gap-4">
-        <div>
-          <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-100">
+      <CardHeader className="bg-gray-50/80 dark:bg-gray-900/80 py-2 sm:py-4 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between gap-2 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <CardTitle className="text-xs sm:text-lg font-bold text-gray-800 dark:text-gray-100 uppercase leading-tight">
             {table.title}
           </CardTitle>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">Table Sequence #{tIdx + 1}</p>
+          <p className="text-[8px] sm:text-[10px] text-gray-400 uppercase tracking-widest font-black mt-0.5 sm:mt-1">Table Sequence #{tIdx + 1}</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleSaveIndividual}
-          className="rounded-xl gap-2 h-8 px-3 text-xs font-bold hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm"
+          className="rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-bold hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm flex-shrink-0"
         >
-          <Download className="h-3.5 w-3.5 text-blue-500" />
-          <span>Save Table</span>
+          <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500" />
+          <span className="hidden xs:inline">Save Table</span>
+          <span className="xs:hidden">Save</span>
         </Button>
       </CardHeader>
       <div ref={localRef} className="overflow-x-auto pb-4 bg-white dark:bg-[#030712] px-6 py-6 rounded-b-[2rem]">
@@ -212,18 +213,18 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
 
   return (
     <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="space-y-3 px-0">
+      <CardHeader className="sm:space-y-3 space-y-2 px-0 py-2 sm:py-6">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-xl font-bold uppercase">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
-                  <FileSpreadsheet className="h-6 w-6 text-blue-600 dark:text-blue-400 shrink-0" />
+            <CardTitle className="flex flex-row items-center gap-2 sm:text-xl text-sm font-bold uppercase truncate">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+                  <FileSpreadsheet className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
                 <span className="truncate">Comparative Analysis</span>
               </div>
-              <span className="text-xs font-black px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full normal-case tracking-normal hidden sm:inline border border-slate-200 dark:border-slate-700">
-                {tables.length} DATASETS
+              <span className="text-[9px] sm:text-xs font-black px-2 py-0.5 sm:px-2.5 sm:py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full normal-case tracking-normal ml-1 flex-shrink-0 border border-blue-200 dark:border-blue-800">
+                {tables.length} TABLE{tables.length !== 1 ? 'S' : ''}
               </span>
             </CardTitle>
           </div>
@@ -231,16 +232,16 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
             variant="outline"
             size="sm"
             onClick={handleDownloadAll}
-            className="rounded-xl gap-2 border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-950 shrink-0 h-10 px-5 shadow-sm"
+            className="rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-950 shrink-0 h-8 sm:h-10 px-3 sm:px-5 shadow-sm text-[10px] sm:text-sm"
           >
-            <Download className="h-4 w-4 text-blue-500" />
+            <Download className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
             <span className="hidden xs:inline">Save All (HD)</span>
             <span className="xs:hidden">All</span>
           </Button>
         </div>
-        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-          Detailed side-by-side analytical breakdown for{' '}
-          <span className="text-blue-500 font-bold underline decoration-blue-500/30 underline-offset-4">{title}</span>
+        <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 font-medium line-clamp-1 sm:line-clamp-none">
+          Detailed breakdown for{' '}
+          <span className="text-blue-500 font-bold underline decoration-blue-500/30 underline-offset-2 sm:underline-offset-4">{title}</span>
         </p>
       </CardHeader>
 

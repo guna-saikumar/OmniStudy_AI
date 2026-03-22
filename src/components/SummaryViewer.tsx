@@ -755,25 +755,25 @@ export default function SummaryViewer({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 print:hidden">
-        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
+        <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-2 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full h-8 w-8 sm:h-10 sm:w-10">
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div className="flex items-center gap-2">
-              <span className="text-[20px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-[18px] sm:text-[28px] font-bold tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                 <span style={{ color: '#1d51df' }}>O</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
+                <span style={{ color: '#1d51df' }} className="ml-0.5 sm:ml-1">S</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-1 sm:w-2"></span>
+                <span className="inline-block w-0.5 sm:w-2"></span>
                 <span style={{ color: '#1d51df' }}>A</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onThemeToggle} className="rounded-full">
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          <Button variant="ghost" size="icon" onClick={onThemeToggle} className="rounded-full h-8 w-8 sm:h-10 sm:w-10">
+            {theme === 'light' ? <Moon className="h-4 w-4 sm:h-5 sm:w-5" /> : <Sun className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
         </div>
       </header>
@@ -781,28 +781,28 @@ export default function SummaryViewer({
       <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8">
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
-            <div>
-              <h1 className="text-xl sm:text-3xl font-bold line-clamp-2">{docTitle}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Summary generated from {summary.fileName || fileName}
-                {summary.pages && <span className="ml-2">· {summary.pages} page{summary.pages !== 1 ? 's' : ''}</span>}
+            <div className="w-full sm:w-auto">
+              <h1 className="text-lg sm:text-3xl font-bold line-clamp-2 leading-tight">{docTitle}</h1>
+              <p className="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 font-medium">
+                Summary from {summary.fileName || fileName}
+                {summary.pages && <span className="ml-2">· {summary.pages} pg{summary.pages !== 1 ? 's' : ''}</span>}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button variant="outline" size="sm" onClick={handleDownloadModulePDF} className="gap-2 rounded-xl flex-1 sm:flex-initial">
-                  <Download className="h-4 w-4 text-blue-500" />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" onClick={handleDownloadModulePDF} className="gap-1.5 sm:gap-2 rounded-xl flex-1 sm:flex-initial h-8 sm:h-9 text-[10px] sm:text-sm px-3 sm:px-4">
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                   This Module
                 </Button>
-                <Button variant="default" size="sm" onClick={handleDownloadPDF} className="gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-initial">
-                  <Download className="h-4 w-4" />
+                <Button variant="default" size="sm" onClick={handleDownloadPDF} className="gap-1.5 sm:gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-initial h-8 sm:h-9 text-[10px] sm:text-sm px-3 sm:px-4">
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                   Full Export
                 </Button>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl outline-none flex-1 sm:flex-initial">
-                    <Share2 className="h-4 w-4" />
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-[10px] sm:text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl outline-none flex-1 sm:flex-initial">
+                    <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
                     Share
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1 bg-white dark:bg-slate-900 border shadow-xl z-50">
@@ -822,8 +822,8 @@ export default function SummaryViewer({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" size="sm" onClick={handleRegenerate} className="border-blue-500 text-blue-500 hover:bg-blue-50 gap-2 rounded-xl flex-1 sm:flex-initial">
-                  <RefreshCw className="h-4 w-4" />
+                <Button variant="outline" size="sm" onClick={handleRegenerate} className="gap-1.5 sm:gap-2 rounded-xl flex-1 sm:flex-initial h-8 sm:h-9 text-[10px] sm:text-sm border-blue-500 text-blue-500 hover:bg-blue-50">
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
                   Regenerate
                 </Button>
               </div>

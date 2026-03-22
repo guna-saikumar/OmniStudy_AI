@@ -108,8 +108,7 @@ export default function Dashboard({
     }
   };
 
-  // Helper function to capture hidden elements
-  const captureElement = async (id: string) => {
+  const captureElement = async (id: string, ratio = 4.5) => {
     const el = document.getElementById(id);
     if (!el) return null;
     const originalStyle = el.style.display;
@@ -117,9 +116,9 @@ export default function Dashboard({
     try {
       const dataUrl = await htmlToImage.toPng(el, {
         quality: 1.0,
-        pixelRatio: 3,
+        pixelRatio: ratio,
         backgroundColor: '#0f172a',
-        style: { transform: 'scale(1)', padding: '20px' },
+        style: { transform: 'scale(1)', padding: '20px', imageRendering: '-webkit-optimize-contrast' },
         cacheBust: true,
       });
       el.style.display = originalStyle;
@@ -134,222 +133,210 @@ export default function Dashboard({
   // Handle Export button click
   const handleExport = async (item: any) => {
     try {
-      toast.info('Generating comprehensive report with visuals...', { duration: 5000 });
-
+      toast.info('Synthesizing comprehensive report...', { duration: 6000 });
       // Fetch the full summary data
       const { data: fullSummary } = await api.get(`/summaries/${item._id}`);
       setActiveExportData(fullSummary);
 
-      // Give components a moment to render in the hidden div
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const highlightTextForPDF = (text: string) => {
+        if (!text) return '';
+        return text.split(/(\s+)/).map(word => {
+          const clean = word.replace(/[^a-zA-Z0-9\-]/g, '');
+          const isImportant = /^[A-Z][a-zA-Z]{2,}$/.test(clean) || /^\d+(\.\d+)?%?$/.test(clean) || /^[A-Z]{2,}$/.test(clean) || /^[a-zA-Z]+-[a-zA-Z]+$/.test(clean);
+          return isImportant ? `<strong style="color: #60a5fa; font-weight: 700;">${word}</strong>` : `<span>${word}</span>`;
+        }).join('');
+      };
 
-      const docTitle = fullSummary.fileName;
+      const docTitle = fullSummary.fileName.replace('.pdf', '').replace(/\.pdf$/i, '') || 'Document';
       const content = fullSummary.content || {};
-      const keyPoints = Array.isArray(content.text) ? content.text : (typeof content.text === 'string' ? content.text.split('\n') : []);
-      const documentOutline = content.documentOutline || [];
+
+      const keyPoints = (
+        Array.isArray(content.text)
+          ? content.text
+          : (typeof content.text === 'string'
+            ? content.text.split('\n')
+            : [])
+      ).map((l: string) => l.replace(/^([^\w\s]+|\d+[\.\)]\s*)+\s*/, '').trim()).filter((l: string) => l.length > 5);
+
+      const documentOutline = content.documentOutline && content.documentOutline.length > 0
+        ? content.documentOutline
+        : keyPoints.slice(0, 6).map((pt: string, i: number) => ({
+          heading: `Section ${i + 1}`,
+          level: 1,
+          bullets: [pt],
+          subSections: [],
+        }));
+
       const flashcards = content.flashcards || [];
       const tables = content.comparativeTable || [];
 
-      const element = document.createElement('div');
-      element.className = 'pdf-export-container';
-      element.style.padding = '40px';
-      element.style.background = '#030712';
-      element.style.color = '#f8fafc';
-      element.style.fontFamily = 'Inter, sans-serif';
+      // Give components a moment to render in the hidden div
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      let html = `
-        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #1e293b;">
-          <h1 style="font-size: 32px; color: #60a5fa; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px;">OmniStudy AI</h1>
-          <p style="font-size: 14px; color: #94a3b8; margin: 0;">Comprehensive Research Report: <span style="color: #60a5fa;">${docTitle}</span></p>
-        </div>
-      `;
+      const finalHtmlEl = document.createElement('div');
+      finalHtmlEl.style.background = '#030712';
+      finalHtmlEl.style.color = '#f8fafc';
+      finalHtmlEl.style.fontFamily = "'Inter', sans-serif";
 
-      // 1. Key Points
-      if (keyPoints.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 20px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">keypoints</h2>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              ${keyPoints.map((p: string, idx: number) => `
-                <div style="display: flex; align-items: start; gap: 18px; background: #020617; border: 1px solid #1e40af; padding: 16px 20px; border-radius: 10px; page-break-inside: avoid;">
-                  <div style="flex-shrink: 0; width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; line-height: 1;">${idx + 1}</div>
-                  <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6;">${p}</p>
-                </div>
-              `).join('')}
+      const modulesToInclude = ['text', 'outline', 'infographic', 'mindmap', 'flashcards', 'table'];
+
+      for (const mType of modulesToInclude) {
+        if (['infographic', 'mindmap'].includes(mType)) {
+          const wrapperId = mType === 'infographic' ? 'dash-export-infographic-all' : 'dash-export-mindmap';
+          const wrapper = document.getElementById(wrapperId);
+          if (!wrapper) continue;
+
+          const origDisplay = wrapper.style.display;
+          const origPos = wrapper.style.position;
+          const origVisibility = wrapper.style.visibility;
+          const origHeight = wrapper.style.height;
+          const origOverflow = wrapper.style.overflow;
+
+          wrapper.style.display = 'block';
+          wrapper.style.position = 'absolute';
+          wrapper.style.top = '-10000px';
+          wrapper.style.width = '1400px';
+          wrapper.style.visibility = 'visible';
+          wrapper.style.height = 'auto';
+          wrapper.style.overflow = 'visible';
+
+          await new Promise(r => setTimeout(r, 1000));
+
+          const items = wrapper.querySelectorAll('[data-pdf-export-target="true"]');
+          for (let i = 0; i < items.length; i++) {
+            const el = items[i] as HTMLElement;
+            const label = el.getAttribute('data-infographic-label') || mType;
+
+            const img = await htmlToImage.toPng(el, {
+              quality: 1.0,
+              pixelRatio: 5.5,
+              backgroundColor: '#030712',
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'center center',
+                opacity: '1',
+                overflow: 'visible',
+                animation: 'none !important',
+                transition: 'none !important',
+                imageRendering: '-webkit-optimize-contrast'
+              }
+            });
+            const page = document.createElement('div');
+            page.style.padding = '15px';
+            page.style.pageBreakAfter = 'always';
+            page.style.backgroundColor = '#020617';
+
+            page.innerHTML = `
+              <div style="text-align: center; margin-bottom: 15px; border-bottom: 1px solid #1e293b; padding-bottom: 10px;">
+                <p style="color:#3b82f6; margin:0; font-size: 14px; font-weight: 900; text-transform:uppercase; letter-spacing:0.1em;">OMNISTUDY AI • ${label}</p>
+              </div>
+              <div class="pdf-tall-image">
+                <img src="${img}" style="width:100%; height:auto; display:block;" />
+              </div>
+            `;
+            finalHtmlEl.appendChild(page);
+          }
+          wrapper.style.display = origDisplay;
+          wrapper.style.position = origPos;
+          wrapper.style.visibility = origVisibility;
+          wrapper.style.height = origHeight;
+          wrapper.style.overflow = origOverflow;
+        } else {
+          const page = document.createElement('div');
+          page.style.padding = '40px';
+          page.style.pageBreakAfter = 'always';
+          if (mType === 'table') page.style.pageBreakBefore = 'always';
+
+          let html = `
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px;">
+              <h1 style="color:#3b82f6; margin:0; font-size: 32px; font-weight: 900;">OMNISTUDY AI</h1>
+              <p style="color:#94a3b8; margin:5px 0 0 0; text-transform:uppercase; font-size:12px;">${mType} Report | ${docTitle}</p>
             </div>
-          </div>
-        `;
-      }
+          `;
 
-      // 2. Outline
-      if (documentOutline.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 24px; border: 1px solid #1e293b;">
-            <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">document structure</h2>
-            ${documentOutline.map((s: any, idx: number) => `
-              <div style="margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; page-break-inside: avoid; background: #020617;">
-                <div style="background: linear-gradient(to right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1)); padding: 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 16px;">
-                  <div style="width: 32px; height: 32px; background: #6366f1; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0;">${idx + 1}</div>
-                  <h3 style="font-size: 16px; font-weight: 800; color: #f8fafc; margin: 0;">${s.heading}</h3>
+          if (mType === 'text' && keyPoints.length > 0) {
+            html += keyPoints.map((p: string, i: number) => `
+              <div style="background:rgba(30, 58, 138, 0.2); border:1px solid rgba(30, 58, 138, 0.3); padding:20px; border-radius:18px; margin-bottom:12px; display:flex; gap:16px; align-items:center; page-break-inside:avoid;">
+                <div style="width:32px; height:32px; background:#3b82f6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; flex-shrink:0; box-shadow:0 0 15px rgba(59, 130, 246, 0.3);">${i + 1}</div>
+                <p style="margin:0; font-size:15px; color:#f1f5f9; line-height:1.6; font-weight:500;">${highlightTextForPDF(p)}</p>
+              </div>
+            `).join('');
+          } else if (mType === 'outline' && documentOutline.length > 0) {
+            html += documentOutline.map((s: any, i: number) => `
+              <div style="margin-bottom:20px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+                <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; gap:16px;">
+                  <div style="width:32px; height:32px; background:#6366f1; color:white; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; box-shadow:0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink:0;">${i + 1}</div>
+                  <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${s.heading}</h4>
                 </div>
-                <div style="padding: 24px; background: rgba(15, 23, 42, 0.5);">
-                  <div style="margin-bottom: 20px;">
-                    ${(s.bullets || []).map((b: string) => `
-                        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; gap: 12px;">
-                          <span style="display: block; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; margin-top: 8px; flex-shrink: 0;"></span>
-                          <p style="margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; font-weight: 500;">${b}</p>
-                        </div>
-                    `).join('')}
-                  </div>
+                <div style="padding:20px; background:#000;">
+                  ${s.bullets.map((b: string) => `<div style="display:flex; gap:12px; margin-bottom:12px; page-break-inside:avoid;"><div style="width:6px; height:6px; background:#818cf8; border-radius:50%; margin-top:6px; flex-shrink:0;"></div><p style="margin:0; color:#cbd5e1; font-size:14px; line-height:1.5;">${b}</p></div>`).join('')}
                   ${(s.subSections || []).map((sub: any) => `
-                    <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 2px solid #312e81; padding-top: 4px; padding-bottom: 4px;">
-                      <h4 style="font-size: 11px; font-weight: 900; color: #818cf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">${sub.title}</h4>
-                      <div style="padding-left: 4px;">
-                        ${(sub.bullets || []).map((sb: string) => `
-                          <div style="display: flex; align-items: flex-start; margin-bottom: 6px; gap: 10px;">
-                            <span style="color: #475569; font-size: 12px;">—</span>
-                            <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 400;">${sb}</p>
-                          </div>
-                        `).join('')}
+                    <div style="margin-left:24px; border-left:2px solid #312e81; padding:5px 0 5px 15px; margin-top:15px; background:rgba(99, 102, 241, 0.05); border-radius:0 8px 8px 0; page-break-inside:avoid;">
+                      <h5 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:#818cf8; text-transform:uppercase; letter-spacing:0.05em;">${sub.title}</h5>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${sub.bullets.map((sb: string) => `<p style="margin:0; color:#94a3b8; font-size:13px; line-height:1.4; page-break-inside:avoid;">— ${sb}</p>`).join('')}
                       </div>
                     </div>
                   `).join('')}
                 </div>
               </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      // 3. Mind Maps
-      const mindmapWrapper = document.getElementById('dash-export-mindmap');
-      if (mindmapWrapper) {
-        const originalDisplay = mindmapWrapper.style.display;
-        mindmapWrapper.style.display = 'block';
-        const innerMaps = mindmapWrapper.querySelectorAll('[data-mindmap-content="true"]');
-
-        for (let i = 0; i < innerMaps.length; i++) {
-          const mapEl = innerMaps[i] as HTMLElement;
-          const mapImg = await htmlToImage.toPng(mapEl, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#0f172a',
-            style: { transform: 'scale(1)', padding: '20px' }
-          });
-
-          html += `
-            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: 10px; box-sizing: border-box;">
-              <div style="width: 96%; border-radius: 24px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 15px 45px rgba(0,0,0,0.6);">
-                <img src="${mapImg}" style="width: 100%; height: auto; display: block;" />
-              </div>
-              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                OmniStudy AI • Mind Map ${i + 1}
-              </div>
-            </div>
-          `;
+            `).join('');
+          } else if (mType === 'flashcards' && flashcards.length > 0) {
+            html += flashcards.map((f: any) => `<div style="border-left:6px solid #ec4899; background:#020617; border: 1px solid #1e293b; padding:18px; margin-bottom:12px; border-radius:10px; page-break-inside:avoid;"><p style="font-weight:bold; margin:0 0 8px 0; color:#fdf2f8; font-size:15px;">Q: ${f.question}</p><p style="color:#fbcfe8; margin:0; font-size:14px; line-height:1.5;">A: ${f.answer}</p></div>`).join('');
+          } else if (mType === 'table' && tables.length > 0) {
+            html += tables.map((table: any) => {
+              const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
+              const rows = table.rows || (Array.isArray(table) ? table : []);
+              return `
+                <div style="margin-bottom:30px; border:1px solid #1e293b; border-radius:16px; background:#020617; overflow:hidden; page-break-inside:avoid;">
+                  <div style="background:linear-gradient(to right, #1e1b4b, #1e3a8a); padding:15px 20px; border-bottom:1px solid #1e293b;">
+                    <h4 style="margin:0; font-weight:700; color:#f8fafc; font-size:16px;">${table.title || 'Comparison Table'}</h4>
+                  </div>
+                  <div style="padding:0; background:#000;">
+                    <table style="width:100%; border-collapse:collapse; color:#cbd5e1; font-size:11px; table-layout:auto;">
+                      <thead>
+                        <tr style="background:#0f172a; border-bottom:1px solid #1e293b;">
+                          <th style="padding:12px; border:1px solid #1e293b; color:#94a3b8; text-align:center; width:40px;">#</th>
+                          ${headers.map((h: string) => `<th style="padding:12px; border:1px solid #1e293b; color:#60a5fa; text-align:left; font-weight:700;">${h.toUpperCase()}</th>`).join('')}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows.map((row: any, rIdx: number) => {
+                          const cells = Array.isArray(row) ? row : Object.values(row);
+                          return `
+                            <tr>
+                              <td style="padding:12px; border:1px solid #1e293b; text-align:center; color:#475569; font-family:monospace;">${rIdx + 1}</td>
+                              ${cells.map((cell: any, cIdx: number) => `
+                                <td style="padding:12px; border:1px solid #1e293b; vertical-align:top; line-height:1.5; ${cIdx === 0 ? 'color:#60a5fa; font-weight:700;' : ''}">
+                                  ${cell || ''}
+                                </td>
+                              `).join('')}
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+          page.innerHTML = html;
+          finalHtmlEl.appendChild(page);
         }
-        mindmapWrapper.style.display = originalDisplay;
       }
 
-      // 4. Infographics
-      const infraWrapper = document.getElementById('dash-export-infographic-all');
-      if (infraWrapper) {
-        const originalDisplay = infraWrapper.style.display;
-        infraWrapper.style.display = 'block';
-        const innerInfras = infraWrapper.querySelectorAll('[data-infographic-content="true"]');
-
-        for (let i = 0; i < innerInfras.length; i++) {
-          const infraEl = innerInfras[i] as HTMLElement;
-          const infraType = infraEl.getAttribute('data-infographic-view') || 'Visual';
-          const infraImg = await htmlToImage.toPng(infraEl, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#0f172a',
-            style: { transform: 'scale(1)', padding: '20px' }
-          });
-
-          const typeLabels: Record<string, string> = {
-            hub: 'Knowledge Hub',
-            flow: 'Logical Interaction Flow',
-            circular: 'Conceptual Orbit',
-            flowchart: 'Structural Progression'
-          };
-
-          const isSteps = infraType === 'flow';
-          const isFlowchart = infraType === 'flowchart';
-
-          html += `
-            <div style="page-break-before: always; width: 100%; min-height: 290mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #030712; padding: ${isFlowchart || isSteps ? '40px' : '10px'}; box-sizing: border-box;">
-               <div style="width: ${isFlowchart ? '42%' : isSteps ? '75%' : '96%'}; ${isFlowchart ? 'max-width: 95mm;' : isSteps ? 'max-height: 265mm;' : ''} border-radius: 20px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 12px 40px rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;">
-                  <img src="${infraImg}" style="max-width: 100%; max-height: ${isSteps ? '260mm' : '100%'}; width: auto; height: auto; display: block; object-fit: contain;" />
-               </div>
-               <div style="margin-top: ${isFlowchart || isSteps ? '30px' : '25px'}; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                  OmniStudy AI • ${typeLabels[infraType] || 'Visual Infographic'}
-               </div>
-            </div>
-          `;
-        }
-        infraWrapper.style.display = originalDisplay;
-      }
-
-      // 5. Flashcards
-      if (flashcards.length > 0) {
-        html += `
-          <div style="margin-bottom: 40px; background: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b; page-break-inside: avoid;">
-              <h2 style="font-size: 18px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 600; letter-spacing: 0.5px;">flashcards</h2>
-              <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                  ${flashcards.map((f: any) => `
-                      <div style="border: 1px solid #3d0a21; padding: 18px; border-radius: 12px; background: #020617; border-left: 6px solid #ec4899; margin-bottom: 12px; page-break-inside: avoid;">
-                          <p style="font-weight: 700; color: #fdf2f8; margin-bottom: 8px; font-size: 15px;">Q: ${f.question}</p>
-                          <p style="color: #fbcfe8; font-size: 14px; line-height: 1.6; border-top: 1px dashed #500724; padding-top: 8px;">A: ${f.answer}</p>
-                      </div>
-                  `).join('')}
-              </div>
-          </div>
-        `;
-      }
-
-      // 6. Comparative Tables
-      if (tables.length > 0) {
-        tables.forEach((table: any, i: number) => {
-          const headers = table.headers || (table[0] ? Object.keys(table[0]) : []);
-          const rows = table.rows || (Array.isArray(table) ? table : []);
-          html += `
-            <div style="page-break-before: always; padding: 20px; background: #030712; min-height: 280mm;">
-              <h2 style="font-size: 20px; color: #e2e8f0; margin-bottom: 25px; text-transform: lowercase; font-weight: 700; letter-spacing: 0.5px;">comparative analysis ${tables.length > 1 ? (i + 1) : ''}</h2>
-              <div style="background: #020617; border-radius: 16px; border: 1px solid #1e293b; overflow: hidden;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #cbd5e1;">
-                  <thead><tr style="background: #000000;">
-                    ${headers.map((h: string) => `<th style="border: 1px solid #1e293b; padding: 14px; text-align: left; color: #60a5fa;">${h}</th>`).join('')}
-                  </tr></thead>
-                  <tbody>
-                    ${rows.map((row: any) => `
-                      <tr>${(Array.isArray(row) ? row : Object.values(row)).map((cell: any) => `<td style="border: 1px solid #1e293b; padding: 14px;">${cell || ''}</td>`).join('')}</tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-              <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-family: Inter, sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8;">
-                OmniStudy AI • Comparison Data
-              </div>
-            </div>
-          `;
-        });
-      }
-
-      element.innerHTML = html;
-
-      const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
         margin: 0,
         filename: `${docTitle}_Full_Report.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 1.0, useCORS: true, backgroundColor: '#030712', logging: false, scrollX: 0, scrollY: 0 },
         jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      await html2pdf().set(opt).from(element).save();
+      const html2pdf = (await import('html2pdf.js')).default;
+      await html2pdf().set(opt).from(finalHtmlEl).save();
       setActiveExportData(null);
       toast.success('Comprehensive Study Report generated successfully!');
     } catch (err: any) {
@@ -872,7 +859,6 @@ export default function Dashboard({
                       </div>
                     </div>
 
-                    {/* Right Section - Actions */}
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -904,12 +890,12 @@ export default function Dashboard({
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleWhatsAppShare(item)} className="gap-2 rounded-xl">
                             <MessageCircle className="h-4 w-4 text-green-500" />
-                            WhatsApp
+                            Share via WhatsApp
                           </DropdownMenuItem>
                           {!!navigator.share && (
                             <DropdownMenuItem onClick={() => handleSystemShare(item)} className="gap-2 rounded-xl">
                               <ExternalLink className="h-4 w-4 text-purple-500" />
-                              More...
+                              More Options...
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -961,13 +947,13 @@ export default function Dashboard({
         {activeExportData && (
           <>
             <div id="dash-export-mindmap" style={{ display: 'none' }}>
-              <MindMapViewer title={activeExportData.fileName} data={activeExportData.content?.mindMapData} theme={theme} />
+              <MindMapViewer title={activeExportData.fileName} data={activeExportData.content?.mindMapData} theme={theme} contentOnly={true} />
             </div>
             <div id="dash-export-infographic-all" style={{ display: 'none', width: '1400px' }}>
-              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="hub" />
-              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flow" />
-              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="circular" />
-              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flowchart" />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="hub" contentOnly={true} />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flow" contentOnly={true} />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="circular" contentOnly={true} />
+              <InfographicViewer title={activeExportData.fileName} data={activeExportData.content?.infographicData} theme={theme} forcedViewMode="flowchart" contentOnly={true} />
             </div>
           </>
         )}

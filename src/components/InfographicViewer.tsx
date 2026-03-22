@@ -240,7 +240,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
   };
 
   const renderFlow = () => (
-    <div className="relative w-[1000px] min-h-[800px] mx-auto space-y-24 py-16 px-6">
+    <div className="relative w-[1000px] min-h-[800px] sm:mx-auto space-y-24 py-16 px-6">
 
       {/* Central Timeline Thread */}
       <div className="absolute left-1/2 top-8 bottom-8 w-1 bg-indigo-100 dark:bg-slate-800 -translate-x-1/2 rounded-full overflow-hidden">
@@ -531,23 +531,23 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
 
   return (
     <Card className="h-[900px] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 rounded-[3rem] isolate">
-      <CardHeader className="flex-shrink-0 flex flex-col xl:flex-row items-center justify-between gap-6 p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-20">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-            <Layers className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+      <CardHeader className="flex-shrink-0 flex flex-col xl:flex-row items-center justify-between gap-4 sm:gap-6 p-3 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-20">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+            <Layers className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white uppercase">Infographic</CardTitle>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sections.length} Core Segments Processed</p>
+            <CardTitle className="text-sm sm:text-xl font-bold text-slate-900 dark:text-white uppercase leading-none">Infographic</CardTitle>
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">{sections.length} Core Segments Processed</p>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-3 sm:gap-4 w-full md:w-auto">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
             <Button
               variant={viewMode === 'hub' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-xl h-9 px-4 text-xs font-bold"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
               onClick={() => setViewMode('hub')}
             >
               Hub
@@ -555,7 +555,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'flow' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-xl h-9 px-4 text-xs font-bold"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
               onClick={() => setViewMode('flow')}
             >
               Steps
@@ -563,7 +563,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'circular' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-xl h-9 px-4 text-xs font-bold"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
               onClick={() => setViewMode('circular')}
             >
               Orbit
@@ -571,33 +571,35 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'flowchart' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-xl h-9 px-4 text-xs font-bold"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
               onClick={() => setViewMode('flowchart')}
             >
               Flow
             </Button>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 px-2 py-1.5 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto justify-between sm:justify-start gap-1">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-3 rounded-xl gap-2 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
+              className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
               onClick={handleDownloadImage}
             >
-              <Download className="h-3.5 w-3.5 text-indigo-500" />
-              Save Image
+              <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500" />
+              <span className="xs:inline md:inline">Save</span>
             </Button>
-            <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.max(40, z - 10))}>
-              <ZoomOut className="h-4 w-4 text-slate-600" />
-            </Button>
-            <span className="text-[11px] font-black px-2 w-12 text-center text-slate-600 dark:text-slate-300">{zoom}%</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.min(200, z + 10))}>
-              <ZoomIn className="h-4 w-4 text-slate-600" />
-            </Button>
-            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg ml-2" onClick={() => setZoom(100)}>
-              <Maximize2 className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1 justify-center sm:mx-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.max(40, z - 10))}>
+                <ZoomOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600" />
+              </Button>
+              <span className="text-[10px] sm:text-[11px] font-black w-10 text-center text-slate-600 dark:text-slate-300">{zoom}%</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setZoom(z => Math.min(200, z + 10))}>
+                <ZoomIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600" />
+              </Button>
+            </div>
+
+            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg flex-shrink-0" onClick={() => setZoom(100)}>
+              <Maximize2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
           </div>
         </div>
@@ -605,8 +607,8 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
 
       <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10 p-0`}>
         <div
-          className={`min-w-full min-h-full flex items-start py-10 sm:py-32 px-10 sm:px-40 ${
-            ['flow', 'flowchart'].includes(viewMode) ? 'justify-center' : 'justify-start'
+          className={`min-w-full min-h-full flex items-start py-10 sm:py-32 px-6 sm:px-40 ${
+            ['flow', 'flowchart'].includes(viewMode) ? 'sm:justify-center justify-start' : 'justify-start'
           }`}
         >
           <div
