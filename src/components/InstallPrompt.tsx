@@ -86,14 +86,13 @@ const InstallPrompt: React.FC = () => {
                </p>
              </div>
           ) : (
-            <button
-              onClick={handleInstallClick}
-              disabled={!deferredPrompt}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95"
-            >
-              <Download className="w-5 h-5" />
-              <span>{deferredPrompt ? 'Install Now' : 'Tap Browser Menu to Install'}</span>
-            </button>
+              <button
+                onClick={handleInstallClick}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 shadow-indigo-500/20"
+              >
+                <Download className="w-5 h-5" />
+                <span>Install Now</span>
+              </button>
           )}
         </div>
       </div>
