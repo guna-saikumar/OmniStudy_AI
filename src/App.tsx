@@ -82,8 +82,10 @@ export default function App() {
         localStorage.removeItem('userInfo');
       }
     }
+
     console.log('[OmniStudy] Initializing application...');
-    // Add a 1.2s delay for a smooth branded splash experience
+    
+    // Branded splash reveal (Logo + Name)
     const timer = setTimeout(() => {
       setAuthReady(true);
     }, 1200);
@@ -144,7 +146,6 @@ export default function App() {
       ) : (
         <>
           <Routes>
-            {/* /login */}
             <Route
               path="/login"
               element={
@@ -154,7 +155,6 @@ export default function App() {
               }
             />
 
-            {/* / — Dashboard */}
             <Route
               path="/"
               element={
@@ -174,7 +174,6 @@ export default function App() {
               }
             />
 
-            {/* /upload */}
             <Route
               path="/upload"
               element={
@@ -189,7 +188,6 @@ export default function App() {
               }
             />
 
-            {/* /summary/:id — ID in the URL = survives refresh */}
             <Route
               path="/summary/:id"
               element={
@@ -199,10 +197,8 @@ export default function App() {
               }
             />
 
-            {/* Legacy /summary (no id) → dashboard */}
             <Route path="/summary" element={<Navigate to="/" replace />} />
 
-            {/* /profile */}
             <Route
               path="/profile"
               element={
@@ -219,7 +215,6 @@ export default function App() {
               }
             />
 
-            {/* /history */}
             <Route
               path="/history"
               element={
@@ -235,10 +230,7 @@ export default function App() {
               }
             />
 
-            {/* /reset-password/:token */}
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-
-            {/* Catch-all */}
             <Route path="*" element={<Navigate to={isLoggedIn ? '/' : '/login'} replace />} />
           </Routes>
           <InstallPrompt />
