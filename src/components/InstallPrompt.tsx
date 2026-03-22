@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -23,11 +24,6 @@ const InstallPrompt: React.FC = () => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
-    // Show prompt after a short delay to ensure user sees the page
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 2000);
-
     // Capture Android/Chrome's native install prompt
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
@@ -37,6 +33,13 @@ const InstallPrompt: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Show prompt after a short delay if NOT iOS (iOS doesn't have the event)
+    const timer = setTimeout(() => {
+      if (isIOSDevice) {
+        setIsVisible(true);
+      }
+    }, 2000);
+
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -44,12 +47,26 @@ const InstallPrompt: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setIsVisible(false);
+    if (!deferredPrompt) {
+      if (isIOS) {
+        // iOS handled by text instructions
+        return;
+      }
+      toast.info("The installer is still preparing... Please try again in 2-3 seconds.");
+      return;
+    }
+    
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsVisible(false);
+        toast.success("OmniStudy AI is being installed!");
+      }
+    } catch (err) {
+      console.error("Installation failed:", err);
+      toast.error("Could not trigger installation. Please use your browser menu.");
     }
   };
 
@@ -71,8 +88,8 @@ const InstallPrompt: React.FC = () => {
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white text-lg leading-tight">Install OmniStudy AI</h3>
-            <p className="text-slate-400 text-sm mt-0.5">
-              Add to your home screen for the full experience.
+            <p className="text-slate-400 text-sm mt-0.5 font-medium leading-normal">
+              Get better performance and offline access.
             </p>
           </div>
         </div>
@@ -86,13 +103,13 @@ const InstallPrompt: React.FC = () => {
                </p>
              </div>
           ) : (
-              <button
-                onClick={handleInstallClick}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 shadow-indigo-500/20"
-              >
-                <Download className="w-5 h-5" />
-                <span>Install Now</span>
-              </button>
+            <button
+              onClick={handleInstallClick}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 shadow-indigo-500/20 text-base"
+            >
+              <Download className="w-5 h-5" />
+              <span>Install Now</span>
+            </button>
           )}
         </div>
       </div>
