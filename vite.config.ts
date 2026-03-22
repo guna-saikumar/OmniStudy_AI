@@ -17,7 +17,7 @@ export default defineConfig({
         short_name: 'OmniStudy',
         description: 'AI-powered study platform for students and researchers',
         theme_color: '#4f46e5',
-        background_color: '#0f172a',
+        background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
