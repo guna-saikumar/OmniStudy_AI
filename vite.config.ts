@@ -11,6 +11,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
       includeAssets: ['favicon.ico', 'icons/icon-192x192.png', 'icons/icon-512x512.png', 'icons/premium-splash.png'],
       manifest: {
         name: 'OmniStudy AI',
