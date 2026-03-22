@@ -11,13 +11,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'icons/icon-192x192.png', 'icons/icon-512x512.png', 'icons/premium-splash.png'],
       manifest: {
         name: 'OmniStudy AI',
         short_name: 'OmniStudy',
         description: 'AI-powered study platform for students and researchers',
         theme_color: '#4f46e5',
-        background_color: '#000000',
+        background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
