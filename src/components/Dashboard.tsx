@@ -842,15 +842,17 @@ export default function Dashboard({
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-lg mb-1 truncate">{item.fileName}</h3>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
-                            {new Date(item.createdAt).toLocaleDateString()}
+                            {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                           </span>
-                          <span>{item.pages} pages</span>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                            {item.status}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span>{item.pages} pages</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                              {item.status}
+                            </span>
+                          </div>
                         </div>
                         <div className="mt-2">
                           <span className="text-sm text-gray-500 dark:text-gray-400">

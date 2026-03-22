@@ -839,7 +839,7 @@ export default function SummaryViewer({
                   key={tab.id}
                   variant={isActive ? 'default' : 'outline'}
                   size="sm"
-                  className={`gap-2 text-xs sm:text-sm ${isActive ? tab.activeBg : ''}`}
+                  className={`gap-2 text-xs sm:text-sm justify-start px-1.2 sm:px-1.5 ${isActive ? tab.activeBg : ''}`}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   <div className={`p-1.5 rounded-lg ${isActive ? 'bg-white/20' : tab.iconBg}`}>
@@ -863,7 +863,7 @@ export default function SummaryViewer({
                     <div className="space-y-4">
                       {keyPoints.map((point: string, index: number) => (
                         <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
-                          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
+                          <span className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
                           <p className="text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
                         </div>
                       ))}
@@ -889,7 +889,7 @@ export default function SummaryViewer({
                             onClick={() => toggleSection(sIdx)}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-xl bg-indigo-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
+                              <div className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
                               <h4 className="font-bold text-gray-900 dark:text-gray-100">{section.heading}</h4>
                             </div>
                             {expandedSections[sIdx] === false ? <ChevronRight className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}

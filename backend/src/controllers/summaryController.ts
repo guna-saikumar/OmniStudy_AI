@@ -6,7 +6,9 @@ import asyncHandler from 'express-async-handler';
 // @route   GET /api/summaries
 // @access  Private
 export const getSummaries = asyncHandler(async (req: Request, res: Response) => {
-    const summaries = await Summary.find({ user: (req as any).user._id }).sort({ createdAt: -1 });
+    const summaries = await Summary.find({ user: (req as any).user._id })
+        .select('-content -pdfText') // Exclude heavy fields for faster history loading
+        .sort({ createdAt: -1 });
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.json(summaries);
 });
