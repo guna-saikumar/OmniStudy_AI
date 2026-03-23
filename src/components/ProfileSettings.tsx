@@ -11,38 +11,42 @@ import api from '../utils/api';
 
 interface ProfileSettingsProps {
   userName: string;
+  profileImage: string | null;
   onBack: () => void;
   onLogout: () => void;
   onNameChange: (name: string) => void;
+  onProfileImageChange: (img: string | null) => void;
   theme: 'light' | 'dark';
   onThemeToggle: () => void;
 }
 
 export default function ProfileSettings({
   userName,
+  profileImage: initialProfileImage,
   onBack,
   onLogout,
   onNameChange,
+  onProfileImageChange,
   theme,
   onThemeToggle,
 }: ProfileSettingsProps) {
   const [name, setName] = useState(userName);
   const [email, setEmail] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(initialProfileImage);
 
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Initial sync with prop
+    setProfileImage(initialProfileImage);
+    
     const userInfo = localStorage.getItem('userInfo');
     if (userInfo) {
       const parsed = JSON.parse(userInfo);
       setEmail(parsed.email);
       setName(parsed.name);
-      if (parsed.profileImage) {
-        setProfileImage(parsed.profileImage);
-      }
     }
-  }, []);
+  }, [initialProfileImage]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,7 +70,10 @@ export default function ProfileSettings({
         name: data.name,
         profileImage: data.profileImage
       }));
+      
       onNameChange(data.name);
+      onProfileImageChange(data.profileImage);
+      
       toast.success('Profile updated successfully!');
       // Return to previous page after successful save
       setTimeout(() => {

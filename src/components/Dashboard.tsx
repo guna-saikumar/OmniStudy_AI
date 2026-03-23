@@ -49,6 +49,7 @@ import { Trash2 as TrashIcon } from 'lucide-react';
 
 interface DashboardProps {
   userName: string;
+  profileImage: string | null;
   onUploadClick: () => void;
   onProfileClick: () => void;
   theme: 'light' | 'dark';
@@ -60,6 +61,7 @@ interface DashboardProps {
 
 export default function Dashboard({
   userName,
+  profileImage,
   onUploadClick,
   onProfileClick,
   theme,
@@ -70,19 +72,10 @@ export default function Dashboard({
 }: DashboardProps) {
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activeExportData, setActiveExportData] = useState<any>(null);
   const exportContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      const parsed = JSON.parse(userInfo);
-      if (parsed.profileImage) {
-        setProfileImage(parsed.profileImage);
-      }
-    }
-
     let isMounted = true;
     const fetchHistory = async () => {
       try {

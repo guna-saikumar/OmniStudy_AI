@@ -58,6 +58,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('Student');
   const [userId, setUserId] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   // authReady prevents ProtectedRoute from redirecting to /login
   // before localStorage has been read on the very first render
@@ -79,8 +80,9 @@ export default function App() {
         const parsed = JSON.parse(raw);
         setUserName(parsed.name || 'Student');
         setUserId(parsed._id || null);
+        setProfileImage(parsed.profileImage || null);
         setIsLoggedIn(true);
-      } catch {
+      } catch (e) {
         localStorage.removeItem('userInfo');
       }
     }
@@ -108,6 +110,7 @@ export default function App() {
 
     setUserName(userObj.name || 'Student');
     setUserId(userObj._id || null);
+    setProfileImage(userObj.profileImage || null);
     setIsLoggedIn(true);
     localStorage.setItem('userInfo', JSON.stringify(userObj));
 
@@ -125,6 +128,7 @@ export default function App() {
     setIsLoggedIn(false);
     setUserName('Student');
     setUserId(null);
+    setProfileImage(null);
     localStorage.removeItem('userInfo');
     navigate('/login', { replace: true });
   };
@@ -169,6 +173,7 @@ export default function App() {
                   <Dashboard
                     key={userId || 'guest'}
                     userName={userName}
+                    profileImage={profileImage}
                     onUploadClick={() => navigate('/upload')}
                     onProfileClick={() => navigate('/profile')}
                     onViewAllClick={() => navigate('/history')}
@@ -212,9 +217,11 @@ export default function App() {
                 <ProtectedRoute isLoggedIn={isLoggedIn}>
                   <ProfileSettings
                     userName={userName}
+                    profileImage={profileImage}
                     onBack={() => navigate('/')}
                     onLogout={handleLogout}
                     onNameChange={(name) => setUserName(name)}
+                    onProfileImageChange={(img) => setProfileImage(img)}
                     theme={theme}
                     onThemeToggle={handleThemeToggle}
                   />

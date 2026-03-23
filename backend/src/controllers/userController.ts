@@ -183,7 +183,9 @@ export const googleAuthUserCustom = asyncHandler(async (req: Request, res: Respo
     });
 });
 
-// @desc    Forgot password - generate reset token
+import nodemailer from 'nodemailer';
+
+// @desc    Forgot password - generate reset token and send email
 // @route   POST /api/users/forgotpassword
 // @access  Public
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
@@ -209,14 +211,64 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 
     await user.save();
 
-    // In a real app, send email. For now, return in response for dev.
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
 
-    console.log('--- PASSWORD RESET LINK ---');
-    console.log(resetUrl);
-    console.log('---------------------------');
+    // Create transporter for sending the email
+    const transporter = nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
 
-    res.json({ success: true, message: 'Reset link generated', resetUrl });
+    const mailOptions = {
+        from: `"OmniStudy AI Support" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: '🔐 OmniStudy AI - Password Reset Request',
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #3b82f6;">OMNISTUDY AI</h1>
+                    <p style="color: #666;">Security System</p>
+                </div>
+                <div style="background: #f8fafc; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                    <h2 style="color: #1e293b; margin-top: 0;">Password Reset Request</h2>
+                    <p>Hello <b>${user.name}</b>,</p>
+                    <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
+                    <p>To reset your password, click the button below. This link will expire in <b>10 minutes</b>.</p>
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="${resetUrl}" style="background: #3b82f6; color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">Reset My Password</a>
+                    </div>
+                    <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                        If the button doesn't work, copy and paste this link into your browser:<br>
+                        <a href="${resetUrl}" style="color: #3b82f6;">${resetUrl}</a>
+                    </p>
+                </div>
+                <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #94a3b8;">
+                    &copy; ${new Date().getFullYear()} OmniStudy AI. All rights reserved.
+                </div>
+            </div>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Password reset email sent!' });
+    } catch (err: any) {
+        console.error('Email sending failed:', err.message);
+        
+        // DEV FALLBACK: If email sending fails, we still log the link to the console
+        // so you can test the rest of the flow! 
+        console.log('--- PASSWORD RESET LINK (FALLBACK) ---');
+        console.log(resetUrl);
+        console.log('--------------------------------------');
+        
+        // Optional: In dev mode, we could return the link in the response, 
+        // but it's safer to just log it for now.
+        res.status(502);
+        throw new Error('Failed to send reset email. Please ensure your .env email credentials are correct.');
+    }
 });
 
 // @desc    Reset password
