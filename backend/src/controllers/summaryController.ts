@@ -39,10 +39,7 @@ export const getSummaryById = asyncHandler(async (req: Request, res: Response) =
     const summary = await Summary.findById(req.params.id);
 
     if (summary) {
-        if (summary.user.toString() !== (req as any).user._id.toString()) {
-            res.status(401);
-            throw new Error('User not authorized');
-        }
+        // Shared links are now publicly viewable by anyone with the link ID
         res.json(summary);
     } else {
         res.status(404);
