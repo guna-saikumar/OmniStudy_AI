@@ -104,11 +104,22 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
     onError: () => toast.error('Google Login Failed'),
   });
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const isSharedLink = searchParams.has('redirect') && searchParams.get('redirect')?.includes('/summary/');
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       {/* Auth Card */}
       <div className="w-full max-w-lg border-2 border-blue-500/30 rounded-3xl bg-slate-900 p-6 sm:p-12">
+        {/* Shared Link Messaging */}
+        {isSharedLink && (
+          <div className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+            <p className="text-blue-400 text-center text-sm font-medium">
+              👋 Sign in to see this shared summary!
+            </p>
+          </div>
+        )}
+
         {/* Logo */}
         <div className="flex justify-center items-center gap-1.5 mb-12">
           <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-8 h-8 sm:w-10 sm:h-10" />
