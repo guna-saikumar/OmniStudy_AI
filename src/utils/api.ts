@@ -33,11 +33,19 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Clear stale session and redirect to login
+            // Clear stale session
             localStorage.removeItem('userInfo');
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
-            }
+            
+            // If already on login, do nothing
+            if (window.location.pathname === '/login') return Promise.reject(error);
+
+            // Construct bulletproof redirect URL so users return to their summary/shared link
+            // after the forced login (especially important for WhatsApp/shared links)
+            const search = new URLSearchParams();
+            search.set('redirect', window.location.pathname + window.location.search);
+            
+            // Hard redirect as a last resort to clear stale state
+            window.location.href = `/login?${search.toString()}`;
         }
         return Promise.reject(error);
     }
