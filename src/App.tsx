@@ -42,9 +42,11 @@ function ProtectedRoute({
 }) {
   const location = useLocation();
   if (!isLoggedIn) {
-    // Remember where the user wanted to go so we can return there after login
-    sessionStorage.setItem('returnTo', location.pathname + location.search);
-    return <Navigate to="/login" replace />;
+    // We use a query parameter for the redirect destination so it's bulletproof
+    // across in-app browsers (WhatsApp/Instagram) that might clear session storage.
+    const search = new URLSearchParams();
+    search.set('redirect', location.pathname + location.search);
+    return <Navigate to={`/login?${search.toString()}`} replace />;
   }
   return <>{children}</>;
 }
@@ -108,10 +110,15 @@ export default function App() {
     setUserId(userObj._id || null);
     setIsLoggedIn(true);
     localStorage.setItem('userInfo', JSON.stringify(userObj));
-    // Go back to wherever they were trying to access
-    const returnTo = sessionStorage.getItem('returnTo') || '/';
+
+    // Priority 1: Check URL search params (most reliable for WhatsApp/Redirects)
+    // Priority 2: Check sessionStorage (fallback)
+    // Priority 3: Default to home
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectPath = searchParams.get('redirect') || sessionStorage.getItem('returnTo') || '/';
+    
     sessionStorage.removeItem('returnTo');
-    navigate(returnTo, { replace: true });
+    navigate(redirectPath, { replace: true });
   };
 
   const handleLogout = () => {
