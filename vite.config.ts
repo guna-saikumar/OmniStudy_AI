@@ -12,7 +12,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html'
       },
       includeAssets: ['favicon.ico', 'icons/icon-192x192.png', 'icons/icon-512x512.png', 'icons/premium-splash.png'],
       manifest: {
