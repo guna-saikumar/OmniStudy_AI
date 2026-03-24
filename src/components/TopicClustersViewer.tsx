@@ -101,10 +101,10 @@ export default function TopicClustersViewer({ title, data }: TopicClustersViewer
                   {/* Header — numbered dot + title */}
                   <div className="flex items-center gap-2 mb-3">
                     <div className={`w-8 h-8 rounded-lg ${style.tag} flex items-center justify-center flex-shrink-0`}>
-                      <span className="text-white text-xs font-bold">{i + 1}</span>
+                      <span className="text-white text-xs font-semibold">{i + 1}</span>
                     </div>
                     <div className="min-w-0">
-                      <h3 className={`font-bold text-sm leading-snug ${style.text} line-clamp-2`}>
+                      <h3 className={`font-semibold text-sm leading-snug ${style.text} line-clamp-2`}>
                         {cluster.category}
                       </h3>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">

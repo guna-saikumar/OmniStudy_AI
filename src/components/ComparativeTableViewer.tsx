@@ -63,7 +63,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
       <Card className="overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950 transition-all hover:shadow-md h-full rounded-[2rem]">
       <CardHeader className="bg-gray-50/80 dark:bg-gray-900/80 py-2 sm:py-4 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between gap-2 sm:gap-4">
         <div className="flex-1 min-w-0">
-          <CardTitle className="text-xs sm:text-lg font-bold text-gray-800 dark:text-gray-100 uppercase leading-tight">
+          <CardTitle className="text-xs sm:text-lg font-semibold text-gray-800 dark:text-gray-100 uppercase leading-tight">
             {table.title}
           </CardTitle>
           <p className="text-[8px] sm:text-[10px] text-gray-400 uppercase  font-black mt-0.5 sm:mt-1">Table Sequence #{tIdx + 1}</p>
@@ -72,7 +72,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
           variant="ghost"
           size="sm"
           onClick={handleSaveIndividual}
-          className="rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-bold hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm flex-shrink-0"
+          className="rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-semibold hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm flex-shrink-0"
         >
           <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500" />
           <span className="hidden xs:inline">Save Table</span>
@@ -101,7 +101,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
                   {rIdx + 1}
                 </td>
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className={`px-6 py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[13px] ${cIdx === 0 ? 'font-bold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
+                  <td key={cIdx} className={`px-6 py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[13px] ${cIdx === 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
                     {cell}
                   </td>
                 ))}
@@ -216,7 +216,7 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
       <CardHeader className="sm:space-y-3 space-y-2 px-0 py-2 sm:py-6">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="flex flex-row items-center gap-2 sm:text-xl text-sm font-bold uppercase truncate">
+            <CardTitle className="flex flex-row items-center gap-2 sm:text-xl text-sm font-semibold uppercase truncate">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
                   <FileSpreadsheet className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -241,7 +241,7 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
         </div>
         <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 font-medium line-clamp-1 sm:line-clamp-none">
           Detailed breakdown for{' '}
-          <span className="text-blue-500 font-bold underline decoration-blue-500/30 underline-offset-2 sm:underline-offset-4">{title}</span>
+          <span className="text-blue-500 font-semibold underline decoration-blue-500/30 underline-offset-2 sm:underline-offset-4">{title}</span>
         </p>
       </CardHeader>
 
@@ -265,7 +265,7 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
               {tables.length === 0 && (
                 <div className="text-center py-20 bg-slate-50/50 dark:bg-slate-900/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
                   <Table className="h-12 w-12 mx-auto mb-4 text-slate-300 dark:text-slate-700" />
-                  <h3 className="text-lg font-bold text-slate-400 dark:text-slate-600">No comparative data found</h3>
+                  <h3 className="text-lg font-semibold text-slate-400 dark:text-slate-600">No comparative data found</h3>
                   <p className="text-sm text-slate-400 max-w-xs mx-auto mt-2">Analysis requires a document with multiple sections or identifiable comparison points.</p>
                 </div>
               )}

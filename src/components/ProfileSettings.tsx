@@ -135,12 +135,12 @@ export default function ProfileSettings({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-[20px] sm:text-[28px] font-bold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
+              <span className="text-[20px] sm:text-[28px] font-semibold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
                 <span style={{ color: '#1d51df' }}>O</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
+                <span style={{ color: '#1d51df' }} className="">S</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-1 sm:w-2"></span>
+                <span className="inline-block ml-2"></span>
                 <span style={{ color: '#1d51df' }}>A</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
               </span>
@@ -171,7 +171,7 @@ export default function ProfileSettings({
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white text-xs font-bold">Upload</span>
+                    <span className="text-white text-xs font-semibold">Upload</span>
                   </div>
                 </label>
               </div>

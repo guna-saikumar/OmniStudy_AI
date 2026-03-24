@@ -119,7 +119,7 @@ const InstallPrompt: React.FC = () => {
              <img src="/icons/icon-192x192.png" alt="Logo" className="w-10 h-10 rounded-lg shadow-lg" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-white text-lg leading-tight">Install OmniStudy AI</h3>
+            <h3 className="font-semibold text-white text-lg leading-tight">Install OmniStudy AI</h3>
             <p className="text-slate-400 text-sm mt-0.5 font-medium leading-normal">
               Get better performance and offline access.
             </p>
@@ -131,13 +131,13 @@ const InstallPrompt: React.FC = () => {
              <div className="flex items-start gap-2.5 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
                <Smartphone className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
                <p className="text-sm text-slate-300">
-                 Tap <span className="font-bold text-white inline-block px-1 border border-slate-700 rounded bg-slate-800">Share</span> then select <span className="font-bold text-white">"Add to Home Screen"</span>
+                 Tap <span className="font-semibold text-white inline-block px-1 border border-slate-700 rounded bg-slate-800">Share</span> then select <span className="font-semibold text-white">"Add to Home Screen"</span>
                </p>
              </div>
           ) : (
             <button
               onClick={handleInstallClick}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 shadow-indigo-500/20 text-base"
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg active:scale-95 shadow-indigo-500/20 text-base"
             >
               <Download className="w-5 h-5" />
               <span>Install Now</span>

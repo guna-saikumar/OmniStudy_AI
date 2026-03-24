@@ -43,7 +43,7 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="sm:space-y-4 space-y-2 px-0 py-2 sm:py-6">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-1.5 sm:gap-2 sm:text-xl text-sm font-bold uppercase truncate">
+          <CardTitle className="flex items-center gap-1.5 sm:gap-2 sm:text-xl text-sm font-semibold uppercase truncate">
             <div className="p-1.5 sm:p-2 bg-pink-50 dark:bg-pink-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
               <SquareStack className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500" />
             </div>
@@ -67,10 +67,10 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
         </p>
 
         <div className="flex sm:hidden items-center gap-2 w-full mt-2">
-          <Button variant="outline" size="sm" onClick={shuffle} className="flex-1 rounded-lg h-8 text-[11px] font-bold">
+          <Button variant="outline" size="sm" onClick={shuffle} className="flex-1 rounded-lg h-8 text-[11px] font-semibold">
             <Shuffle className="h-3.5 w-3.5 mr-1.5" /> Shuffle
           </Button>
-          <Button variant="outline" size="sm" onClick={reset} className="flex-1 rounded-lg h-8 text-[11px] font-bold">
+          <Button variant="outline" size="sm" onClick={reset} className="flex-1 rounded-lg h-8 text-[11px] font-semibold">
             <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reset
           </Button>
         </div>
@@ -97,7 +97,7 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
                       {isFlipped ? (
                         <>
                           <div>
-                            <span className="inline-block px-3 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full tracking-wider mb-3">
+                            <span className="inline-block px-3 py-1 bg-emerald-500 text-white text-[10px] font-semibold rounded-full tracking-wider mb-3">
                               ANSWER
                             </span>
                             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
@@ -108,10 +108,10 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
                       ) : (
                         <>
                           <div>
-                            <span className="inline-block px-3 py-1 bg-pink-500 text-white text-[10px] font-bold rounded-full tracking-wider mb-3">
+                            <span className="inline-block px-3 py-1 bg-pink-500 text-white text-[10px] font-semibold rounded-full tracking-wider mb-3">
                               QUESTION {i + 1}
                             </span>
-                            <p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">
                               {current.question}
                             </p>
                           </div>

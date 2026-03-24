@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
                     </div>
                 </div>
 
-                <h2 className="text-2xl font-bold text-white text-center mb-2 uppercase">New Password</h2>
+                <h2 className="text-2xl font-semibold text-white text-center mb-2 uppercase">New Password</h2>
                 <p className="text-gray-400 text-center mb-8 text-sm">Create a strong new password for your account.</p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

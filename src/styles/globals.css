@@ -131,124 +131,43 @@
   }
 }
 
-/**
- * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
- */
-@layer base {
-  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
-    h1 {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
 
-    h2 {
-      font-size: var(--text-xl);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    h3 {
-      font-size: var(--text-lg);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    h4 {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    label {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    button {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    input {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-normal);
-      line-height: 1.5;
-    }
-  }
+.brand-logo-gradient {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #f472b6 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  color: transparent !important;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.4));
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  font-style: italic;
 }
 
-html {
-  font-size: var(--font-size);
+
+.brand-logo {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: linear-gradient(90deg, #7dd3fc 0%, #ffffff 40%, #ff4ecd 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  color: transparent !important;
+  /* Brighter Glow for maximum visibility of the 'I' */
+  filter: drop-shadow(0 0 10px rgba(255, 78, 205, 0.5));
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  font-style: italic;
+  padding-right: 4px;
 }
 
-/* Sonner Toast Customization */
-[data-sonner-toast] {
-  padding-right: 48px !important;
-}
-
-[data-sonner-toast] [data-close-button] {
-  left: auto !important;
-  right: 12px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  background: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--foreground) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  opacity: 1 !important;
-  transition: all 0.2s !important;
-  width: 24px !important;
-  height: 24px !important;
-}
-
-[data-sonner-toast] [data-close-button]:hover {
-  background: var(--accent) !important;
-  transform: translateY(-50%) scale(1.1) !important;
-}
-
-/* Premium Infographic Animations */
-@keyframes flow {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-100%);
-  }
-}
-
-@keyframes grow {
-  from {
-    stroke-dasharray: 0, 100;
-  }
-
-  to {
-    stroke-dasharray: 75, 100;
-  }
-}
-
-@keyframes slide {
-  from {
-    transform: translate(0, 0);
-  }
-
-  to {
-    transform: translate(100px, 100px);
-  }
-}
-
-@keyframes slideRight {
-  from {
-    width: 0;
-  }
-
-  to {
-    width: 85%;
-  }
+.brand-logo-ai {
+  font-weight: 800;
+  margin-left: 0.25rem;
 }

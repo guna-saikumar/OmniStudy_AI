@@ -170,14 +170,8 @@ export default function UploadScreen({
             </Button>
             <div className="flex items-center gap-1.5">
               <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-[20px] sm:text-[28px] font-bold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
-                <span style={{ color: '#1d51df' }}>O</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-1 sm:w-2"></span>
-                <span style={{ color: '#1d51df' }}>A</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+              <span className="brand-logo text-[20px] sm:text-[28px]">
+                OmniStudy <span className="brand-logo-ai">AI</span>
               </span>
             </div>
           </div>
@@ -200,7 +194,7 @@ export default function UploadScreen({
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Upload Your PDF</h1>
+            <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">Upload Your PDF</h1>
             <p className="text-gray-600 dark:text-gray-400">
               Drop your file here or click to browse
             </p>
@@ -223,7 +217,7 @@ export default function UploadScreen({
                     <Upload className="h-12 w-12 sm:h-16 sm:w-16 text-blue-500" />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold">
+                    <h3 className="text-xl font-semibold">
                       {isDragging ? 'Drop your file here' : 'Drag & drop your PDF here'}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">or</p>
@@ -251,7 +245,7 @@ export default function UploadScreen({
                       <FileText className="h-8 w-8 text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold truncate">{file.name}</h4>
+                      <h4 className="font-semibold truncate">{file.name}</h4>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
@@ -281,7 +275,7 @@ export default function UploadScreen({
                                 ? '🤖 Gemini AI is analyzing...'
                                 : '💾 Saving to database...'}
                         </span>
-                        <span className="font-bold">{uploadProgress}%</span>
+                        <span className="font-semibold">{uploadProgress}%</span>
                       </div>
                       <Progress value={uploadProgress} className="h-2" />
                     </div>
@@ -291,7 +285,7 @@ export default function UploadScreen({
                   {uploadProgress === 100 && (
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-bold">Upload complete!</span>
+                      <span className="font-semibold">Upload complete!</span>
                     </div>
                   )}
 
@@ -316,7 +310,7 @@ export default function UploadScreen({
             <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
               <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold text-red-900 dark:text-red-100">Error</h4>
+                <h4 className="font-semibold text-red-900 dark:text-red-100">Error</h4>
                 <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             </div>
@@ -325,7 +319,7 @@ export default function UploadScreen({
           {/* File Requirements */}
           <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
             <CardContent className="py-6">
-              <h3 className="font-bold mb-3">File Guidelines</h3>
+              <h3 className="font-semibold mb-3">File Guidelines</h3>
               <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-blue-500" />

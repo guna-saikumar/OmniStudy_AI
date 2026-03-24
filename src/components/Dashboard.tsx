@@ -407,14 +407,8 @@ export default function Dashboard({
         <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <span className="text-[20px] sm:text-[28px] font-bold drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
-              <span style={{ color: '#1d51df' }}>O</span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-              <span style={{ color: '#1d51df' }} className="ml-1">S</span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-              <span className="inline-block w-1 sm:w-2"></span>
-              <span style={{ color: '#1d51df' }}>A</span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+            <span className="brand-logo text-[20px] sm:text-[28px]">
+              OmniStudy <span className="brand-logo-ai">AI</span>
             </span>
           </div>
           <DropdownMenu>
@@ -428,7 +422,7 @@ export default function Dashboard({
               )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel className="font-bold">My Account</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-semibold">My Account</DropdownMenuLabel>
               <DropdownMenuItem
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={onProfileClick}
@@ -459,7 +453,7 @@ export default function Dashboard({
       <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12">
         {/* Welcome Section */}
         <section className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-4xl font-bold px-2">
+          <h1 className="text-2xl sm:text-4xl font-semibold px-2">
             Hi {userName}, ready to simplify your studying?
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base max-w-xs sm:max-w-none mx-auto">
@@ -475,7 +469,7 @@ export default function Dashboard({
                 <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold">Upload Your PDF</h3>
+                <h3 className="text-xl font-semibold">Upload Your PDF</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
                   Supports PDF, PPT, DOCX, TXT formats
                 </p>
@@ -483,16 +477,16 @@ export default function Dashboard({
 
               {/* File Extension Icons */}
               <div className="flex flex-wrap items-center justify-center gap-3 py-2">
-                <div className="bg-red-500 text-white px-3 py-1.5 rounded-md font-bold text-sm shadow-sm">
+                <div className="bg-red-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
                   PDF
                 </div>
-                <div className="bg-orange-500 text-white px-3 py-1.5 rounded-md font-bold text-sm shadow-sm">
+                <div className="bg-orange-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
                   PPT
                 </div>
-                <div className="bg-blue-500 text-white px-3 py-1.5 rounded-md font-bold text-sm shadow-sm">
+                <div className="bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
                   DOCX
                 </div>
-                <div className="bg-teal-500 text-white px-3 py-1.5 rounded-md font-bold text-sm shadow-sm">
+                <div className="bg-teal-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
                   TXT
                 </div>
               </div>
@@ -511,7 +505,7 @@ export default function Dashboard({
 
         {/* Visual Stepper */}
         <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-center">How It Works</h2>
+          <h2 className="text-2xl font-semibold text-center">How It Works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {/* Step 1 */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-blue-400/50 transition-all duration-300">
@@ -519,10 +513,10 @@ export default function Dashboard({
                 <Upload className="h-8 w-8 text-blue-500" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
                   1
                 </span>
-                <h3 className="font-bold">Upload</h3>
+                <h3 className="font-semibold">Upload</h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Choose your PDF file
@@ -535,10 +529,10 @@ export default function Dashboard({
                 <Sparkles className="h-8 w-8 text-emerald-500" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                <span className="bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
                   2
                 </span>
-                <h3 className="font-bold">Summarize</h3>
+                <h3 className="font-semibold">Summarize</h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 AI processes your document
@@ -551,10 +545,10 @@ export default function Dashboard({
                 <Eye className="h-8 w-8 text-purple-500" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
                   3
                 </span>
-                <h3 className="font-bold">View</h3>
+                <h3 className="font-semibold">View</h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Review in multiple formats
@@ -567,10 +561,10 @@ export default function Dashboard({
                 <Download className="h-8 w-8 text-orange-500" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
                   4
                 </span>
-                <h3 className="font-bold">Download</h3>
+                <h3 className="font-semibold">Download</h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Save and share your notes
@@ -582,7 +576,7 @@ export default function Dashboard({
         {/* Explore Smart Summary Modes Section */}
         <section className="space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">What You Get After Uploading</h2>
+            <h2 className="text-2xl font-semibold">What You Get After Uploading</h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Choose from six powerful summary modes designed to match your learning style
             </p>
@@ -594,7 +588,7 @@ export default function Dashboard({
                 <div className="bg-blue-100 dark:bg-blue-950 p-2 rounded">
                   <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="font-bold text-lg">Key Points</h3>
+                <h3 className="font-semibold text-lg">Key Points</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -608,7 +602,7 @@ export default function Dashboard({
                 <div className="bg-indigo-100 dark:bg-indigo-950 p-2 rounded">
                   <List className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <h3 className="font-bold text-lg">Outline</h3>
+                <h3 className="font-semibold text-lg">Outline</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -622,7 +616,7 @@ export default function Dashboard({
                 <div className="bg-orange-100 dark:bg-orange-950 p-2 rounded">
                   <ImageIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
-                <h3 className="font-bold text-lg">Infographic</h3>
+                <h3 className="font-semibold text-lg">Infographic</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -636,7 +630,7 @@ export default function Dashboard({
                 <div className="bg-purple-100 dark:bg-purple-950 p-2 rounded">
                   <Network className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h3 className="font-bold text-lg">Mind Map</h3>
+                <h3 className="font-semibold text-lg">Mind Map</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -650,7 +644,7 @@ export default function Dashboard({
                 <div className="bg-pink-100 dark:bg-pink-950 p-2 rounded">
                   <SquareStack className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                 </div>
-                <h3 className="font-bold text-lg">Flashcards</h3>
+                <h3 className="font-semibold text-lg">Flashcards</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -664,7 +658,7 @@ export default function Dashboard({
                 <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
                   <Table className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                 </div>
-                <h3 className="font-bold text-lg">Comparison</h3>
+                <h3 className="font-semibold text-lg">Comparison</h3>
               </div>
               <div className="w-full h-[1px] bg-gray-200 dark:bg-gray-700 my-1"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400 pt-1">
@@ -676,7 +670,7 @@ export default function Dashboard({
 
         {/* Benefits Section */}
         <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-center">Why Students Love This Tool</h2>
+          <h2 className="text-2xl font-semibold text-center">Why Students Love This Tool</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-4 flex flex-row items-center gap-4 space-y-0">
@@ -730,7 +724,7 @@ export default function Dashboard({
 
         {/* Features Grid */}
         <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-center">Features</h2>
+          <h2 className="text-2xl font-semibold text-center">Features</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Feature 1 - Free to Use */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -817,7 +811,7 @@ export default function Dashboard({
         {/* Recent History Section */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Recent History</h2>
+            <h2 className="text-2xl font-semibold">Recent History</h2>
             <Button variant="ghost" className="text-blue-500 hover:text-blue-600" onClick={onViewAllClick}>
               View All
             </Button>
@@ -834,7 +828,7 @@ export default function Dashboard({
                         <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg mb-1 truncate">{item.fileName}</h3>
+                        <h3 className="font-semibold text-lg mb-1 truncate">{item.fileName}</h3>
                         <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
@@ -842,7 +836,7 @@ export default function Dashboard({
                           </span>
                           <div className="flex items-center gap-3">
                             <span>{item.pages} pages</span>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                               {item.status}
                             </span>
                           </div>
@@ -926,7 +920,7 @@ export default function Dashboard({
               <div className="bg-gray-100 dark:bg-gray-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FileArchive className="h-10 w-10 text-gray-400" />
               </div>
-              <h3 className="font-bold text-lg mb-2">No History Yet</h3>
+              <h3 className="font-semibold text-lg mb-2">No History Yet</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Upload your first PDF to get started
               </p>

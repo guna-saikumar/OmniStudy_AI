@@ -123,14 +123,8 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
         {/* Logo */}
         <div className="flex justify-center items-center gap-1.5 mb-12">
           <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-8 h-8 sm:w-10 sm:h-10" />
-          <span className="text-[20px] sm:text-[28px] font-bold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
-            <span style={{ color: '#1d51df' }}>O</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-            <span style={{ color: '#1d51df' }} className="ml-1">S</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-            <span className="inline-block w-1 sm:w-2"></span>
-            <span style={{ color: '#1d51df' }}>A</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+          <span className="brand-logo text-[24px] sm:text-[32px]">
+            OmniStudy <span className="brand-logo-ai">AI</span>
           </span>
         </div>
 
@@ -209,7 +203,7 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
         {/* FORGOT PASSWORD FORM */}
         {isForgotPasswordMode && (
           <form onSubmit={handleForgotPassword} className="space-y-6">
-            <h2 className="text-white text-xl font-bold text-center mb-4">Reset Your Password</h2>
+            <h2 className="text-white text-xl font-semibold text-center mb-4">Reset Your Password</h2>
             <p className="text-gray-400 text-sm text-center">
               Enter your email address and we'll send you instructions to reset your password.
             </p>

@@ -144,15 +144,11 @@ export default function App() {
       {!authReady ? (
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-1000">
           <img src="/icons/logo-transparent-512.png" alt="OmniStudy Logo" className="w-32 h-32 sm:w-48 sm:h-48 animate-pulse" />
-          <span className="text-[28px] sm:text-[42px] font-bold drop-shadow-[0_0_15px_rgba(59,130,246,0.3)] flex items-center">
-            <span style={{ color: '#1d51df' }}>O</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-            <span style={{ color: '#1d51df' }} className="ml-1">S</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-            <span className="inline-block w-2 sm:w-4"></span>
-            <span style={{ color: '#1d51df' }}>A</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
-          </span>
+          <h1 className="brand-logo text-[32px] sm:text-[48px]">
+            OmniStudy <span className="brand-logo-ai">AI</span>
+          </h1>
+          {/* Lens Flare Line */}
+          <div className="w-48 sm:w-64 h-[1.5px] bg-gradient-to-r from-transparent via-[#d946ef] to-transparent shadow-[0_0_20px_rgba(217,70,239,0.8)] opacity-80 -mt-4"></div>
         </div>
       ) : (
         <>

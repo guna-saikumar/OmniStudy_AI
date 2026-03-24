@@ -238,15 +238,15 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark', content
             <Presentation className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <CardTitle className="text-sm sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">Mind Map</CardTitle>
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase  mt-0.5 sm:mt-1">{nodes.length} Core Topics Processed</p>
+            <CardTitle className="text-sm sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-white uppercase leading-none">Mind Map</CardTitle>
+            <p className="text-[8px] sm:text-[10px] font-semibold text-slate-400 uppercase  mt-0.5 sm:mt-1">{nodes.length} Core Topics Processed</p>
           </div>
         </div>
         <div className="flex items-center bg-slate-50 dark:bg-slate-950 px-2 py-1.5 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto justify-between sm:justify-start gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2.5 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
+            className="h-8 px-2.5 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-800"
             onClick={handleDownloadImage}
           >
             <Download className="h-4 w-4 text-indigo-500" />

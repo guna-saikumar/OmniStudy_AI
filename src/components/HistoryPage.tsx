@@ -356,14 +356,8 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                         </Button>
                         <div className="flex items-center gap-1.5">
                             <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-                            <span className="text-[20px] sm:text-[28px] font-bold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
-                                <span style={{ color: '#1d51df' }}>O</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-                                <span style={{ color: '#1d51df' }} className="ml-1">S</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                                <span className="inline-block w-1 sm:w-2"></span>
-                                <span style={{ color: '#1d51df' }}>A</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+                            <span className="brand-logo text-[20px] sm:text-[28px]">
+                                OmniStudy <span className="brand-logo-ai">AI</span>
                             </span>
                         </div>
                     </div>
@@ -374,7 +368,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
             </header>
 
             <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-6">
-                <h1 className="text-3xl font-bold">All Summaries</h1>
+                <h1 className="text-3xl font-semibold">All Summaries</h1>
                 <p className="text-gray-600 dark:text-gray-400">View and manage all your past document summaries.</p>
 
                 <div className="space-y-4">
@@ -395,7 +389,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                                                     <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className="font-bold text-lg mb-1 truncate">{item.fileName}</h3>
+                                                    <h3 className="font-semibold text-lg mb-1 truncate">{item.fileName}</h3>
                                                     <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                                                         <span className="flex items-center gap-1">
                                                             <Clock className="h-3.5 w-3.5" />
@@ -403,7 +397,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                                                         </span>
                                                         <div className="flex items-center gap-3">
                                                             <span>{item.pages} pages</span>
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                                                                 {item.status}
                                                             </span>
                                                         </div>

@@ -762,14 +762,8 @@ export default function SummaryViewer({
             </Button>
             <div className="flex items-center gap-1.5 sm:gap-1.5">
               <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-[18px] sm:text-[28px] font-bold  drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center">
-                <span style={{ color: '#1d51df' }}>O</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>mni</span>
-                <span style={{ color: '#1d51df' }} className="ml-0.5 sm:ml-1">S</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>tudy</span>
-                <span className="inline-block w-0.5 sm:w-2"></span>
-                <span style={{ color: '#1d51df' }}>A</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400" style={{ backgroundImage: 'linear-gradient(to right, #2B7FFF)', WebkitBackgroundClip: 'text' }}>I</span>
+              <span className="brand-logo text-[18px] sm:text-[28px]">
+                OmniStudy <span className="brand-logo-ai">AI</span>
               </span>
             </div>
           </div>
@@ -783,7 +777,7 @@ export default function SummaryViewer({
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
             <div className="w-full sm:w-auto">
-              <h1 className="text-lg sm:text-3xl font-bold line-clamp-2 leading-tight">{docTitle}</h1>
+              <h1 className="text-lg sm:text-3xl font-semibold line-clamp-2 leading-tight">{docTitle}</h1>
               <p className="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 font-medium">
                 Summary from {summary.fileName || fileName}
                 {summary.pages && <span className="ml-2">· {summary.pages} pg{summary.pages !== 1 ? 's' : ''}</span>}
@@ -856,14 +850,14 @@ export default function SummaryViewer({
             <div id="export-text" className={activeTab === 'text' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
-                  <CardTitle className="text-lg sm:text-xl font-bold">Key Points</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl font-semibold">Key Points</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
                       {keyPoints.map((point: string, index: number) => (
                         <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
-                          <span className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
+                          <span className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
                           <p className="text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
                         </div>
                       ))}
@@ -877,7 +871,7 @@ export default function SummaryViewer({
             <div id="export-outline" className={activeTab === 'outline' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
-                  <CardTitle className="text-lg sm:text-xl font-bold">Outline</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl font-semibold">Outline</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
@@ -889,8 +883,8 @@ export default function SummaryViewer({
                             onClick={() => toggleSection(sIdx)}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
-                              <h4 className="font-bold text-gray-900 dark:text-gray-100">{section.heading}</h4>
+                              <div className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
+                              <h4 className="font-semibold text-gray-900 dark:text-gray-100">{section.heading}</h4>
                             </div>
                             {expandedSections[sIdx] === false ? <ChevronRight className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
                           </button>

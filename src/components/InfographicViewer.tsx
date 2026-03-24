@@ -220,7 +220,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-black text-[13px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-none">{section.title}</h4>
-                    <div className="text-[9px] font-bold text-slate-400/80 uppercase  mt-0.5">{section.type || 'Insight'}</div>
+                    <div className="text-[9px] font-semibold text-slate-400/80 uppercase  mt-0.5">{section.type || 'Insight'}</div>
                   </div>
                 </div>
                 <ul className="space-y-1">
@@ -278,7 +278,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                 {section.points.slice(0, 5).map((p: string, pi: number) => (
                   <li key={pi} className={`flex gap-3 ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color.main }} />
-                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-bold break-words">{p}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-semibold break-words">{p}</p>
                   </li>
                 ))}
               </ul>
@@ -365,7 +365,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                   {section.points.slice(0, 2).map((p: string, pi: number) => (
                     <div key={pi} className="flex gap-2">
                       <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: color }} />
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-tight break-words">{p}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold leading-tight break-words">{p}</p>
                     </div>
                   ))}
                 </div>
@@ -397,7 +397,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
         <div className="relative z-10 space-y-16">
           <div className="space-y-4 text-center">
             <h3 className="text-xs font-black text-indigo-500 uppercase tracking-[0.3em]">the infographic architecture</h3>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase">Conceptual Logic Diagram</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white uppercase">Conceptual Logic Diagram</h2>
           </div>
 
           <div className="flex flex-col items-center gap-24">
@@ -423,7 +423,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                       `}>
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-black text-[13px] tracking-[0.2em] text-slate-400 uppercase">{section.type || 'ENTITY'}</span>
-                          <span className={`text-[11px] px-2 py-1 rounded uppercase font-bold ${section.metadata?.complexity === 'high' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                          <span className={`text-[11px] px-2 py-1 rounded uppercase font-semibold ${section.metadata?.complexity === 'high' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
                             {section.metadata?.complexity || 'MED'}
                           </span>
                         </div>
@@ -432,7 +432,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                           {section.points.slice(0, 5).map((p, pi) => (
                             <li key={pi} className="flex gap-2 items-start">
                               <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed">{p}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">{p}</p>
                             </li>
                           ))}
                         </ul>
@@ -449,7 +449,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                           <span className="font-black text-[14px] sm:text-[15px] uppercase text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="w-full space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
-                              <div key={pi} className="text-[10px] text-teal-700/70 dark:text-teal-400/70 font-bold bg-teal-500/5 dark:bg-teal-400/5 px-3 py-2 rounded border border-teal-100 dark:border-teal-900/30">
+                              <div key={pi} className="text-[10px] text-teal-700/70 dark:text-teal-400/70 font-semibold bg-teal-500/5 dark:bg-teal-400/5 px-3 py-2 rounded border border-teal-100 dark:border-teal-900/30">
                                 {p}
                               </div>
                             ))}
@@ -470,7 +470,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                           <span className="font-black text-[14px] sm:text-[15px] uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
-                              <p key={pi} className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-3">
+                              <p key={pi} className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-3">
                                 {p}
                               </p>
                             ))}
@@ -480,7 +480,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                     )}
 
                     {/* Side Tag (Page Context) */}
-                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[8px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[8px] font-semibold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                       LOGIC BLOCK
                     </div>
                   </div>
@@ -537,8 +537,8 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Layers className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <CardTitle className="text-sm sm:text-xl font-bold text-slate-900 dark:text-white uppercase leading-none">Infographic</CardTitle>
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase  mt-0.5 sm:mt-1">{sections.length} Core Segments Processed</p>
+            <CardTitle className="text-sm sm:text-xl font-semibold text-slate-900 dark:text-white uppercase leading-none">Infographic</CardTitle>
+            <p className="text-[8px] sm:text-[10px] font-semibold text-slate-400 uppercase  mt-0.5 sm:mt-1">{sections.length} Core Segments Processed</p>
           </div>
         </div>
 
@@ -547,7 +547,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'hub' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold flex-1 sm:flex-initial"
               onClick={() => setViewMode('hub')}
             >
               Hub
@@ -555,7 +555,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'flow' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold flex-1 sm:flex-initial"
               onClick={() => setViewMode('flow')}
             >
               Steps
@@ -563,7 +563,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'circular' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold flex-1 sm:flex-initial"
               onClick={() => setViewMode('circular')}
             >
               Orbit
@@ -571,7 +571,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant={viewMode === 'flowchart' ? 'secondary' : 'ghost'}
               size="sm"
-              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-bold flex-1 sm:flex-initial"
+              className="rounded-lg sm:rounded-xl h-7 sm:h-9 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold flex-1 sm:flex-initial"
               onClick={() => setViewMode('flowchart')}
             >
               Flow
@@ -582,7 +582,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800"
+              className="h-7 sm:h-8 px-2 sm:px-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-800"
               onClick={handleDownloadImage}
             >
               <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500" />
@@ -634,7 +634,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
             <Maximize2 className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h4 className="font-bold text-sm">Visual Architecture Ready</h4>
+            <h4 className="font-semibold text-sm">Visual Architecture Ready</h4>
             <p className="text-[11px] text-slate-500">Interactive visualization for {displayTitle}</p>
           </div>
         </div>
