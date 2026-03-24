@@ -66,7 +66,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
           <CardTitle className="text-xs sm:text-lg font-bold text-gray-800 dark:text-gray-100 uppercase leading-tight">
             {table.title}
           </CardTitle>
-          <p className="text-[8px] sm:text-[10px] text-gray-400 uppercase tracking-widest font-black mt-0.5 sm:mt-1">Table Sequence #{tIdx + 1}</p>
+          <p className="text-[8px] sm:text-[10px] text-gray-400 uppercase  font-black mt-0.5 sm:mt-1">Table Sequence #{tIdx + 1}</p>
         </div>
         <Button
           variant="ghost"

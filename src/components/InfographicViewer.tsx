@@ -220,7 +220,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-black text-[13px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-none">{section.title}</h4>
-                    <div className="text-[9px] font-bold text-slate-400/80 uppercase tracking-widest mt-0.5">{section.type || 'Insight'}</div>
+                    <div className="text-[9px] font-bold text-slate-400/80 uppercase  mt-0.5">{section.type || 'Insight'}</div>
                   </div>
                 </div>
                 <ul className="space-y-1">
@@ -442,7 +442,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                     {typeIndex === 1 && ( /* Process Style */
                       <div className="w-full h-full bg-white dark:bg-slate-900 border-2 border-teal-200 dark:border-teal-900/50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col overflow-hidden ring-4 ring-teal-50/50 dark:ring-teal-950/20 group-hover:ring-teal-500/10 transition-all min-h-[140px]">
                         <div className="h-10 border-b-2 border-teal-100 dark:border-teal-900/30 flex items-center justify-between px-4 bg-teal-50/30 dark:bg-teal-900/10">
-                          <span className="text-[13px] font-black text-teal-600 tracking-widest">{section.type?.toUpperCase() || 'PROCESS'}</span>
+                          <span className="text-[13px] font-black text-teal-600 ">{section.type?.toUpperCase() || 'PROCESS'}</span>
                           <span className="text-[13px] font-black text-teal-600/50">{String(i + 1).padStart(2, '0')}</span>
                         </div>
                         <div className="p-5 flex flex-col items-center">
@@ -466,7 +466,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                           </div>
                         </div>
                         <div className="flex-1 flex flex-col p-5">
-                          <span className="text-[11px] text-indigo-400 font-black uppercase tracking-widest mb-1 text-center">{section.type || 'STORE'}</span>
+                          <span className="text-[11px] text-indigo-400 font-black uppercase  mb-1 text-center">{section.type || 'STORE'}</span>
                           <span className="font-black text-[14px] sm:text-[15px] uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-4 text-center">{section.title}</span>
                           <div className="space-y-2">
                             {section.points.slice(0, 5).map((p, pi) => (
@@ -492,7 +492,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                         {/* Flow Label */}
                         <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-950 px-3 py-1 border border-slate-200 dark:border-slate-800 rounded-full whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase">Process Flow</span>
+                            <span className="text-[8px] font-black  text-slate-400 uppercase">Process Flow</span>
                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
                           </div>
                         </div>
@@ -538,7 +538,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
           </div>
           <div>
             <CardTitle className="text-sm sm:text-xl font-bold text-slate-900 dark:text-white uppercase leading-none">Infographic</CardTitle>
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">{sections.length} Core Segments Processed</p>
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase  mt-0.5 sm:mt-1">{sections.length} Core Segments Processed</p>
           </div>
         </div>
 

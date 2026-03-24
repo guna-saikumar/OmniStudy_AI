@@ -239,7 +239,7 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark', content
           </div>
           <div>
             <CardTitle className="text-sm sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">Mind Map</CardTitle>
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">{nodes.length} Core Topics Processed</p>
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase  mt-0.5 sm:mt-1">{nodes.length} Core Topics Processed</p>
           </div>
         </div>
         <div className="flex items-center bg-slate-50 dark:bg-slate-950 px-2 py-1.5 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto justify-between sm:justify-start gap-1">
