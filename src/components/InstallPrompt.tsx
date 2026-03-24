@@ -52,10 +52,8 @@ const InstallPrompt: React.FC = () => {
         // iOS handled by text instructions
         return;
       }
-      // If no native prompt event, show manual install instructions for Android/Chrome
-      toast.info("To install, click your browser's 'Three-Dot menu' (⋮) and select 'Install app' or 'Add to Home Screen'.", {
-        duration: 8000
-      });
+      // If we don't have the prompt yet, just wait - don't show the manual toast yet
+      toast.info("Preparing the installer... please wait 1-2 seconds.");
       return;
     }
     
@@ -69,7 +67,7 @@ const InstallPrompt: React.FC = () => {
       }
     } catch (err) {
       console.error("Installation failed:", err);
-      toast.error("Could not trigger installation. Please use your browser menu.");
+      toast.error("Process interrupted. Please try clicking Install again.");
     }
   };
 
