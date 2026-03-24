@@ -44,10 +44,20 @@ const InstallPrompt: React.FC = () => {
       e.preventDefault();
       (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
+      // Ensure visibility when ready
       setIsVisible(true);
     };
 
+    const handleAppInstalled = () => {
+      console.log('App was successfully installed');
+      setDeferredPrompt(null);
+      (window as any).deferredInstallPrompt = null;
+      setIsVisible(false);
+      toast.success("OmniStudy AI added to your home screen! Open it from your apps.");
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Show banner on every load as requested by user logics
     const timer = setTimeout(() => {
@@ -60,6 +70,7 @@ const InstallPrompt: React.FC = () => {
       clearInterval(checkInterval);
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -79,8 +90,12 @@ const InstallPrompt: React.FC = () => {
       
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
+        // DISAPPEAR IMMEDIATELY once the user says YES
         setDeferredPrompt(null);
+        (window as any).deferredInstallPrompt = null;
         setIsVisible(false);
+        // Browser notification is native, but we show a supportive toast
+        toast.info("Installation started! It will appear on your home screen shortly.");
       }
     } catch (err) {
       console.error("Native installation attempt failed:", err);
