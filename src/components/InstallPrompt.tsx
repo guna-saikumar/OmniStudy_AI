@@ -18,6 +18,7 @@ const InstallPrompt: React.FC = () => {
                         || (window.navigator as any).standalone 
                         || document.referrer.includes('android-app://');
 
+    // If already installed (standalone), hide the prompt and exit
     if (isStandalone) {
       setIsVisible(false);
       return;
@@ -29,20 +30,24 @@ const InstallPrompt: React.FC = () => {
 
     // Capture Android/Chrome's native install prompt
     const handleBeforeInstallPrompt = (e: any) => {
+      console.log('Native install prompt is ready!');
       e.preventDefault();
       setDeferredPrompt(e);
-      // We also show it if the event fires even before the timer
+      // Ensure visibility when ready
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // PERSISTENT LOGIC: Show the prompt to all browser users every time they open the page
+    // LOGIC: Show the banner on EVERY load if the user is in a normal browser tab
+    // This fulfills both of the user's requested logics.
     const timer = setTimeout(() => {
-      if (!isStandalone) {
+      // Re-check standalone to be safe
+      const stillStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      if (!stillStandalone) {
         setIsVisible(true);
       }
-    }, 2000);
+    }, 1000); // 1 second delay feels professional and deliberate
 
     return () => {
       clearTimeout(timer);
@@ -51,25 +56,35 @@ const InstallPrompt: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      if (isIOS) return; // iOS has instructions shown
-      
-      // If native prompt isn't ready within 2 seconds, we guide them
-      toast.info("Preparing your study environment... Please click again in 1 second!");
-      return;
+    // If the browser hasn't officially ready yet, we retry once quickly
+    if (!deferredPrompt && !isIOS) {
+       toast.info("Preparing the installer... please try once more in a second.");
+       return;
     }
     
+    if (isIOS) {
+      // iOS doesn't have a programmatic "prompt", so we show the "Share" instructions
+      // which we handle in the JSX below
+      return;
+    }
+
+    if (!deferredPrompt) return;
+
     try {
-      deferredPrompt.prompt();
+      // Call the captured native prompt event
+      await deferredPrompt.prompt();
+      
       const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User installation choice: ${outcome}`);
+      
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
         setIsVisible(false);
-        toast.success("OmniStudy AI is being installed!");
+        toast.success("OmniStudy AI is being added to your device!");
       }
     } catch (err) {
-      console.error("Installation failure:", err);
-      toast.error("Process interrupted. Please try through your browser menu.");
+      console.error("Installation attempt failed:", err);
+      toast.error("Please use your browser menu or wait a second and try again.");
     }
   };
 
