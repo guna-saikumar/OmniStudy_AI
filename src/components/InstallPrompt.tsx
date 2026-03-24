@@ -18,7 +18,6 @@ const InstallPrompt: React.FC = () => {
                         || (window.navigator as any).standalone 
                         || document.referrer.includes('android-app://');
 
-    // If already installed (standalone), hide the prompt and exit
     if (isStandalone) {
       setIsVisible(false);
       return;
@@ -28,57 +27,64 @@ const InstallPrompt: React.FC = () => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
-    // Capture Android/Chrome's native install prompt
+    // Capture Android/Chrome's native install prompt from global check
+    const checkGlobalPrompt = () => {
+      if ((window as any).deferredInstallPrompt) {
+        setDeferredPrompt((window as any).deferredInstallPrompt);
+        setIsVisible(true);
+      }
+    };
+
+    // Check immediately and periodically for a few seconds
+    checkGlobalPrompt();
+    const checkInterval = setInterval(checkGlobalPrompt, 500);
+
     const handleBeforeInstallPrompt = (e: any) => {
-      console.log('Native install prompt is ready!');
+      console.log('Capture native prompt from event listener');
       e.preventDefault();
+      (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
-      // Ensure visibility when ready
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // LOGIC: Show the banner on EVERY load if the user is in a normal browser tab
-    // This fulfills both of the user's requested logics.
+    // Show banner on every load as requested by user logics
     const timer = setTimeout(() => {
-      // Re-check standalone to be safe
-      const stillStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      if (!stillStandalone) {
+      if (!isStandalone) {
         setIsVisible(true);
       }
-    }, 1000); // 1 second delay feels professional and deliberate
+    }, 1000);
 
     return () => {
+      clearInterval(checkInterval);
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    // 1. If we're on iOS, share instructions are already on-screen, nothing to click
+    // If we're on iOS, instructions are already visible on screen
     if (isIOS) return;
 
-    // 2. If the native prompt is ALREADY ready, fire it immediately!
-    if (deferredPrompt) {
-      try {
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          setDeferredPrompt(null);
-          setIsVisible(false);
-        }
-        return;
-      } catch (err) {
-        console.error("Native installation attempt failed:", err);
-      }
+    // If the browser hasn't officially ready yet, we wait silently
+    if (!deferredPrompt) {
+       console.log("Installation button clicked but native prompt not ready yet. Waiting silently...");
+       return;
     }
 
-    // 3. FALLBACK: If clicked before browser event fired, we tell it to "Watch for Ready"
-    // and provide instructions for manual install via the browser's menu (top right three dots).
-    // This solves the "dead click" for those browsers that never fire the event.
-    console.log("Installation button clicked: browser event not fired yet.");
-    toast.info("Preparing your native installer... if it doesn't appear, tap the three dots (⋮) in your browser and select 'Install app'.", { duration: 5000 });
+    try {
+      // Direct call to native prompt
+      await deferredPrompt.prompt();
+      
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsVisible(false);
+      }
+    } catch (err) {
+      console.error("Native installation attempt failed:", err);
+    }
   };
 
   if (!isVisible) return null;
