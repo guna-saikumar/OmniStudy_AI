@@ -31,16 +31,15 @@ const InstallPrompt: React.FC = () => {
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // ONLY SHOW the banner when the native prompt is officially READY
-      // This prevents the "installer is still preparing" toast!
+      // We also show it if the event fires even before the timer
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // On iOS, we show the prompt using a timer because iOS doesn't have the "beforeinstallprompt" event
+    // PERSISTENT LOGIC: Show the prompt to all browser users every time they open the page
     const timer = setTimeout(() => {
-      if (isIOSDevice && !isStandalone) {
+      if (!isStandalone) {
         setIsVisible(true);
       }
     }, 2000);
@@ -53,11 +52,10 @@ const InstallPrompt: React.FC = () => {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      if (isIOS) {
-        // iOS handled by text instructions
-        return;
-      }
-      toast.info("The installer is still preparing... Please try again in 2-3 seconds.");
+      if (isIOS) return; // iOS has instructions shown
+      
+      // If native prompt isn't ready within 2 seconds, we guide them
+      toast.info("Preparing your study environment... Please click again in 1 second!");
       return;
     }
     
@@ -70,8 +68,8 @@ const InstallPrompt: React.FC = () => {
         toast.success("OmniStudy AI is being installed!");
       }
     } catch (err) {
-      console.error("Installation failed:", err);
-      toast.error("Could not trigger installation. Please use your browser menu.");
+      console.error("Installation failure:", err);
+      toast.error("Process interrupted. Please try through your browser menu.");
     }
   };
 
