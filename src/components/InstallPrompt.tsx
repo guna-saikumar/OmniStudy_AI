@@ -56,35 +56,26 @@ const InstallPrompt: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    // If the browser hasn't officially ready yet, we retry once quickly
-    if (!deferredPrompt && !isIOS) {
-       toast.info("Preparing the installer... please try once more in a second.");
+    // If we're on iOS, instructions are already visible on screen
+    if (isIOS) return;
+
+    // If the browser hasn't officially ready yet, we wait silently
+    if (!deferredPrompt) {
+       console.log("Installation button clicked but native prompt not ready yet. Waiting silently...");
        return;
     }
-    
-    if (isIOS) {
-      // iOS doesn't have a programmatic "prompt", so we show the "Share" instructions
-      // which we handle in the JSX below
-      return;
-    }
-
-    if (!deferredPrompt) return;
 
     try {
-      // Call the captured native prompt event
+      // Direct call to native prompt
       await deferredPrompt.prompt();
       
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User installation choice: ${outcome}`);
-      
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
         setIsVisible(false);
-        toast.success("OmniStudy AI is being added to your device!");
       }
     } catch (err) {
-      console.error("Installation attempt failed:", err);
-      toast.error("Please use your browser menu or wait a second and try again.");
+      console.error("Native installation attempt failed:", err);
     }
   };
 
