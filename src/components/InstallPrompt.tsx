@@ -13,31 +13,36 @@ const InstallPrompt: React.FC = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if site is already in standalone mode (already installed)
+    // Check if the app is already installed/running in standalone mode
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
                         || (window.navigator as any).standalone 
                         || document.referrer.includes('android-app://');
 
-    if (isStandalone) return;
+    if (isStandalone) {
+      setIsVisible(false);
+      return;
+    }
 
     // Detect iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
-    // LOGIC 1 & 2: Show the install section every time the user opens the link
-    // We force visibility after a 3s delay even if the native prompt hasn't fired yet
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 3000);
-
+    // Capture Android/Chrome's native install prompt
     const handleBeforeInstallPrompt = (e: any) => {
+      console.log('Capture beforeinstallprompt event'); // Verification log
       e.preventDefault();
       setDeferredPrompt(e);
-      // Native event caught!
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Show prompt after a short delay for all browser users who haven't installed yet
+    const timer = setTimeout(() => {
+      // If we're not in standalone mode, we show the prompt to encourage installation
+      // This will show every time the page is reloaded in a browser
+      setIsVisible(true);
+    }, 1500);
 
     return () => {
       clearTimeout(timer);
@@ -48,11 +53,10 @@ const InstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       if (isIOS) {
-        // iOS handled by text instructions already shown in UI
+        // iOS handled by text instructions
         return;
       }
-      // Reverting to previous toast message for better user feedback
-      toast.info("The installer is preparing... Please wait 2 seconds and try again.");
+      toast.info("The installer is still preparing... Please try again in 2-3 seconds.");
       return;
     }
     
