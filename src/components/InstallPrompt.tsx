@@ -32,13 +32,13 @@ const InstallPrompt: React.FC = () => {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Show prompt after a short delay if NOT iOS (iOS doesn't have the event)
+    
+    // LOGIC: Every time the user opens the link and they aren't installed, 
+    // show the prompt after a short delay (3 seconds). 
+    // This handles both the 'not installed' and 'uninstalled' cases.
     const timer = setTimeout(() => {
-      if (isIOSDevice) {
-        setIsVisible(true);
-      }
-    }, 2000);
+      setIsVisible(true);
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
@@ -52,7 +52,10 @@ const InstallPrompt: React.FC = () => {
         // iOS handled by text instructions
         return;
       }
-      toast.info("The installer is still preparing... Please try again in 2-3 seconds.");
+      // If no native prompt event, show manual install instructions for Android/Chrome
+      toast.info("To install, click your browser's 'Three-Dot menu' (⋮) and select 'Install app' or 'Add to Home Screen'.", {
+        duration: 8000
+      });
       return;
     }
     

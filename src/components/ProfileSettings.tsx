@@ -51,9 +51,43 @@ export default function ProfileSettings({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image is too large. Please select a file smaller than 10MB.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+        const img = new Image();
+        img.onload = () => {
+          // Perform image compression to ensure mobile reliability
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 800; // Standard profile size for clarity + speed
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Convert to base64 with moderate compression quality (0.7)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setProfileImage(compressedBase64);
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
