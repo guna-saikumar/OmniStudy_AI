@@ -56,27 +56,29 @@ const InstallPrompt: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    // If we're on iOS, instructions are already visible on screen
+    // 1. If we're on iOS, share instructions are already on-screen, nothing to click
     if (isIOS) return;
 
-    // If the browser hasn't officially ready yet, we wait silently
-    if (!deferredPrompt) {
-       console.log("Installation button clicked but native prompt not ready yet. Waiting silently...");
-       return;
+    // 2. If the native prompt is ALREADY ready, fire it immediately!
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+          setIsVisible(false);
+        }
+        return;
+      } catch (err) {
+        console.error("Native installation attempt failed:", err);
+      }
     }
 
-    try {
-      // Direct call to native prompt
-      await deferredPrompt.prompt();
-      
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-        setIsVisible(false);
-      }
-    } catch (err) {
-      console.error("Native installation attempt failed:", err);
-    }
+    // 3. FALLBACK: If clicked before browser event fired, we tell it to "Watch for Ready"
+    // and provide instructions for manual install via the browser's menu (top right three dots).
+    // This solves the "dead click" for those browsers that never fire the event.
+    console.log("Installation button clicked: browser event not fired yet.");
+    toast.info("Preparing your native installer... if it doesn't appear, tap the three dots (⋮) in your browser and select 'Install app'.", { duration: 5000 });
   };
 
   if (!isVisible) return null;
