@@ -29,20 +29,21 @@ const InstallPrompt: React.FC = () => {
 
     // Capture Android/Chrome's native install prompt
     const handleBeforeInstallPrompt = (e: any) => {
-      console.log('Capture beforeinstallprompt event'); // Verification log
       e.preventDefault();
       setDeferredPrompt(e);
+      // ONLY SHOW the banner when the native prompt is officially READY
+      // This prevents the "installer is still preparing" toast!
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Show prompt after a short delay for all browser users who haven't installed yet
+    // On iOS, we show the prompt using a timer because iOS doesn't have the "beforeinstallprompt" event
     const timer = setTimeout(() => {
-      // If we're not in standalone mode, we show the prompt to encourage installation
-      // This will show every time the page is reloaded in a browser
-      setIsVisible(true);
-    }, 1500);
+      if (isIOSDevice && !isStandalone) {
+        setIsVisible(true);
+      }
+    }, 2000);
 
     return () => {
       clearTimeout(timer);
