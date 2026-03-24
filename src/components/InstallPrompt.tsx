@@ -13,7 +13,7 @@ const InstallPrompt: React.FC = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if the app is already installed/running in standalone mode
+    // Check if site is already in standalone mode (already installed)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
                         || (window.navigator as any).standalone 
                         || document.referrer.includes('android-app://');
@@ -24,21 +24,20 @@ const InstallPrompt: React.FC = () => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
-    // Capture Android/Chrome's native install prompt
+    // LOGIC 1 & 2: Show the install section every time the user opens the link
+    // We force visibility after a 3s delay even if the native prompt hasn't fired yet
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 3000);
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      // Native event caught!
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    // LOGIC: Every time the user opens the link and they aren't installed, 
-    // show the prompt after a short delay (3 seconds). 
-    // This handles both the 'not installed' and 'uninstalled' cases.
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 3000);
 
     return () => {
       clearTimeout(timer);
@@ -49,11 +48,11 @@ const InstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       if (isIOS) {
-        // iOS handled by text instructions
+        // iOS handled by text instructions already shown in UI
         return;
       }
-      // If we don't have the prompt yet, just wait - don't show the manual toast yet
-      toast.info("Preparing the installer... please wait 1-2 seconds.");
+      // Reverting to previous toast message for better user feedback
+      toast.info("The installer is preparing... Please wait 2 seconds and try again.");
       return;
     }
     
@@ -67,7 +66,7 @@ const InstallPrompt: React.FC = () => {
       }
     } catch (err) {
       console.error("Installation failed:", err);
-      toast.error("Process interrupted. Please try clicking Install again.");
+      toast.error("Could not trigger installation. Please use your browser menu.");
     }
   };
 
