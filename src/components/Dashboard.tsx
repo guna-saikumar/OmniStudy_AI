@@ -29,6 +29,8 @@ import {
   Copy,
   MessageCircle,
   ExternalLink,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
@@ -401,41 +403,10 @@ export default function Dashboard({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-          <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Skeleton className="w-8 h-8 rounded-md" />
-              <Skeleton className="w-32 h-6" />
-            </div>
-            <Skeleton className="w-10 h-10 rounded-full" />
-          </div>
-        </header>
-        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <Skeleton className="h-[400px] w-full rounded-2xl" />
-            </div>
-            <div className="space-y-6">
-              <Skeleton className="h-[200px] w-full rounded-2xl" />
-              <Skeleton className="h-[200px] w-full rounded-2xl" />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Top Navigation */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+      {/* Top Navigation - Always rendered for stable transition */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 print:hidden">
         <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
           <div className="flex items-center gap-1.5 animate-in fade-in duration-500">
             <img 
@@ -451,46 +422,63 @@ export default function Dashboard({
               OmniStudy <span className="brand-logo-ai">AI</span>
             </span>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex items-center justify-center h-10 w-10 overflow-hidden rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800"
-            >
-              {profileImage ? (
-                <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
-              ) : (
-                <CircleUser className="h-6 w-6" />
-              )}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel className="font-semibold">My Account</DropdownMenuLabel>
-              <DropdownMenuItem
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={onProfileClick}
+          
+          {isLoading ? (
+             <Skeleton className="w-10 h-10 rounded-full" />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="flex items-center justify-center h-10 w-10 overflow-hidden rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800"
               >
-                <CircleUser className="h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-2"
-                onClick={onThemeToggle}
-              >
-                <Settings className="h-5 w-5" />
-                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="flex items-center gap-2 text-red-500 hover:text-red-600"
-                onClick={onLogout}
-              >
-                <LogOut className="h-5 w-5" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {profileImage ? (
+                  <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <CircleUser className="h-6 w-6" />
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 mt-2 rounded-2xl p-2 bg-white dark:bg-slate-900 border shadow-xl">
+                <DropdownMenuLabel className="px-3 py-2 font-medium">My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator className="opacity-50" />
+                <DropdownMenuItem onClick={onProfileClick} className="gap-3 rounded-xl cursor-default hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors p-2.5">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onThemeToggle} className="gap-3 rounded-xl cursor-default hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors p-2.5">
+                  {theme === 'light' ? <Moon className="h-4 w-4 text-slate-500" /> : <Sun className="h-4 w-4 text-yellow-500" />}
+                  Theme: {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="opacity-50" />
+                <DropdownMenuItem 
+                  onClick={onLogout}
+                  className="gap-3 rounded-xl cursor-default text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors p-2.5 font-medium"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </header>
+      {isLoading ? (
 
-      <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12">
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8 animate-in fade-in duration-700 [animation-delay:300ms]">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-5 w-96" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <Skeleton className="h-[400px] w-full rounded-2xl" />
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12 animate-in fade-in duration-1000">
         {/* Welcome Section */}
         <section className="text-center space-y-2">
           <h1 className="text-2xl sm:text-4xl font-semibold px-2">
@@ -972,6 +960,7 @@ export default function Dashboard({
           )}
         </section>
       </main>
+      )}
       {/* Export Capture Utility (Hidden) */}
       <div className="pointer-events-none absolute" style={{ top: -10000, left: -5000, overflow: 'hidden' }}>
         {activeExportData && (
