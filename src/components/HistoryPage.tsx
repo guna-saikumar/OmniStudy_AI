@@ -376,7 +376,7 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                     {isLoading ? (
                         <div className="flex flex-col gap-4">
                             {[1, 2, 3, 4, 5].map((i) => (
-                                <Card key={i} className="dark:bg-black/50 overflow-hidden">
+                                <Card key={i} className="dark:bg-black overflow-hidden border-gray-200 dark:border-gray-800">
                                   <CardContent className="p-6">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                       <div className="flex items-start gap-4 flex-1">
