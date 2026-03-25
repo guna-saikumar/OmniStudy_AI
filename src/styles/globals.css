@@ -155,18 +155,18 @@
   letter-spacing: 0.01em;
   background: linear-gradient(
     90deg, 
-    #7dd3fc 0%, 
-    #ffffff 25%, 
-    #ff4ecd 50%,
-    #ffffff 75%,
-    #7dd3fc 100%
+    #0ea5e9 0%, 
+    #4f46e5 25%, 
+    #d946ef 50%,
+    #4f46e5 75%,
+    #0ea5e9 100%
   );
   background-size: 200% auto !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
   color: transparent !important;
-  filter: drop-shadow(0 0 12px rgba(255, 78, 205, 0.4));
+  filter: drop-shadow(0 0 12px rgba(79, 70, 229, 0.4));
   display: inline-flex;
   align-items: center;
   user-select: none;
