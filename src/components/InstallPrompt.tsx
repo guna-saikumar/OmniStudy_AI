@@ -27,12 +27,9 @@ const InstallPrompt: React.FC = () => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
-    // Check if dismissed in THIS session only
-    const wasDismissedInSession = sessionStorage.getItem('pwa_prompt_dismissed') === 'true';
-
     // Capture Android/Chrome's native install prompt from global check
     const checkGlobalPrompt = () => {
-      if ((window as any).deferredInstallPrompt && !wasDismissedInSession) {
+      if ((window as any).deferredInstallPrompt) {
         setDeferredPrompt((window as any).deferredInstallPrompt);
         setIsVisible(true);
       }
@@ -47,10 +44,8 @@ const InstallPrompt: React.FC = () => {
       e.preventDefault();
       (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
-      // Only show if not dismissed in this session
-      if (!sessionStorage.getItem('pwa_prompt_dismissed')) {
-        setIsVisible(true);
-      }
+      // Ensure visibility when native prompt is ready
+      setIsVisible(true);
     };
 
     const handleAppInstalled = () => {
@@ -58,17 +53,15 @@ const InstallPrompt: React.FC = () => {
       setDeferredPrompt(null);
       (window as any).deferredInstallPrompt = null;
       setIsVisible(false);
-      // Mark as permanently hidden since it's now installed
-      sessionStorage.setItem('pwa_installed_hint', 'true');
       toast.success("OmniStudy AI added to your home screen!");
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show banner on every fresh load if not installed and not dismissed in session
+    // Show banner on EVERY fresh load if not in standalone mode
     const timer = setTimeout(() => {
-      if (!isStandalone && !sessionStorage.getItem('pwa_prompt_dismissed')) {
+      if (!isStandalone) {
         setIsVisible(true);
       }
     }, 1500);
@@ -82,7 +75,6 @@ const InstallPrompt: React.FC = () => {
   }, []);
 
   const dismissBanner = () => {
-    sessionStorage.setItem('pwa_prompt_dismissed', 'true');
     setIsVisible(false);
   };
 
