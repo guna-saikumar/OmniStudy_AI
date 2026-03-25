@@ -27,25 +27,30 @@ const InstallPrompt: React.FC = () => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
+    // Check if dismissed in THIS session only
+    const wasDismissedInSession = sessionStorage.getItem('pwa_prompt_dismissed') === 'true';
+
     // Capture Android/Chrome's native install prompt from global check
     const checkGlobalPrompt = () => {
-      if ((window as any).deferredInstallPrompt) {
+      if ((window as any).deferredInstallPrompt && !wasDismissedInSession) {
         setDeferredPrompt((window as any).deferredInstallPrompt);
         setIsVisible(true);
       }
     };
 
-    // Check immediately and periodically for a few seconds
+    // Check immediately and periodically
     checkGlobalPrompt();
-    const checkInterval = setInterval(checkGlobalPrompt, 500);
+    const checkInterval = setInterval(checkGlobalPrompt, 1000);
 
     const handleBeforeInstallPrompt = (e: any) => {
       console.log('Capture native prompt from event listener');
       e.preventDefault();
       (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
-      // Ensure visibility when ready
-      setIsVisible(true);
+      // Only show if not dismissed in this session
+      if (!sessionStorage.getItem('pwa_prompt_dismissed')) {
+        setIsVisible(true);
+      }
     };
 
     const handleAppInstalled = () => {
@@ -53,18 +58,20 @@ const InstallPrompt: React.FC = () => {
       setDeferredPrompt(null);
       (window as any).deferredInstallPrompt = null;
       setIsVisible(false);
-      toast.success("OmniStudy AI added to your home screen! Open it from your apps.");
+      // Mark as permanently hidden since it's now installed
+      sessionStorage.setItem('pwa_installed_hint', 'true');
+      toast.success("OmniStudy AI added to your home screen!");
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show banner on every load as requested by user logics
+    // Show banner on every fresh load if not installed and not dismissed in session
     const timer = setTimeout(() => {
-      if (!isStandalone) {
+      if (!isStandalone && !sessionStorage.getItem('pwa_prompt_dismissed')) {
         setIsVisible(true);
       }
-    }, 1000);
+    }, 1500);
 
     return () => {
       clearInterval(checkInterval);
@@ -73,6 +80,11 @@ const InstallPrompt: React.FC = () => {
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
+
+  const dismissBanner = () => {
+    sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+    setIsVisible(false);
+  };
 
   const handleInstallClick = async () => {
     // If we're on iOS, instructions are already visible on screen
@@ -96,6 +108,9 @@ const InstallPrompt: React.FC = () => {
         setIsVisible(false);
         // Browser notification is native, but we show a supportive toast
         toast.info("Installation started! It will appear on your home screen shortly.");
+      } else {
+        // user dismissed the NATIVE prompt, so we also hide OUR banner for this session
+        dismissBanner();
       }
     } catch (err) {
       console.error("Native installation attempt failed:", err);
@@ -108,7 +123,7 @@ const InstallPrompt: React.FC = () => {
     <div className="fixed bottom-6 left-4 right-4 z-[9999] animate-in fade-in slide-in-from-bottom-5">
       <div className="bg-slate-900 border border-indigo-500/50 rounded-2xl p-5 shadow-2xl shadow-indigo-500/20 backdrop-blur-xl">
         <button 
-          onClick={() => setIsVisible(false)}
+          onClick={dismissBanner}
           className="absolute top-3 right-3 text-slate-400 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
