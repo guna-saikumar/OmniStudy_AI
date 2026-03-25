@@ -10,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,8 @@ const InstallPrompt: React.FC = () => {
 
     // Capture Android/Chrome's native install prompt from global check
     const checkGlobalPrompt = () => {
-      if ((window as any).deferredInstallPrompt) {
+      // ONLY set visible if it hasn't been dismissed manually in this session
+      if ((window as any).deferredInstallPrompt && !isDismissed) {
         setDeferredPrompt((window as any).deferredInstallPrompt);
         setIsVisible(true);
       }
@@ -44,8 +46,10 @@ const InstallPrompt: React.FC = () => {
       e.preventDefault();
       (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
-      // Ensure visibility when native prompt is ready
-      setIsVisible(true);
+      // Ensure visibility when native prompt is ready, but ONLY if not dismissed
+      if (!isDismissed) {
+        setIsVisible(true);
+      }
     };
 
     const handleAppInstalled = () => {
@@ -59,9 +63,9 @@ const InstallPrompt: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show banner on EVERY fresh load if not in standalone mode
+    // Show banner on EVERY fresh load if not in standalone mode and not dismissed
     const timer = setTimeout(() => {
-      if (!isStandalone) {
+      if (!isStandalone && !isDismissed) {
         setIsVisible(true);
       }
     }, 1500);
@@ -72,9 +76,10 @@ const InstallPrompt: React.FC = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [isDismissed]); // Re-run effect or check state when dismissal changes
 
   const dismissBanner = () => {
+    setIsDismissed(true);
     setIsVisible(false);
   };
 
