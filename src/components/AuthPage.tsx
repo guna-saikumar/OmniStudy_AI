@@ -121,9 +121,17 @@ export default function AuthPage({ onLogin, theme, onThemeToggle }: AuthPageProp
         )}
 
         {/* Logo */}
-        <div className="flex justify-center items-center gap-1.5 mb-12">
-          <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-8 h-8 sm:w-10 sm:h-10" />
-          <span className="brand-logo text-[24px] sm:text-[32px]">
+        <div className="flex justify-center items-center gap-1.5 mb-12 animate-in fade-in duration-500">
+          <img 
+            id="app-logo-target"
+            src="/icons/logo-transparent-192.png" 
+            alt="OmniStudy Logo" 
+            className="w-8 h-8 sm:w-10 sm:h-10" 
+          />
+          <span 
+            id="app-title-target"
+            className="brand-logo text-[24px] sm:text-[32px]"
+          >
             OmniStudy <span className="brand-logo-ai">AI</span>
           </span>
         </div>

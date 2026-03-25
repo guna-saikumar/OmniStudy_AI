@@ -63,6 +63,8 @@ export default function App() {
   // authReady prevents ProtectedRoute from redirecting to /login
   // before localStorage has been read on the very first render
   const [authReady, setAuthReady] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [flightStyles, setFlightStyles] = useState<React.CSSProperties>({});
 
   // Restore auth + theme from localStorage on first load
   useEffect(() => {
@@ -91,10 +93,51 @@ export default function App() {
     
     // Branded splash reveal (Logo + Name)
     const timer = setTimeout(() => {
-      setAuthReady(true);
-    }, 1200);
+      setIsExiting(true);
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Shared Element Coordinate Calculation
+  useEffect(() => {
+    if (isExiting) {
+      // Small delay to ensure the background app has rendered target IDs
+      const timer = setTimeout(() => {
+        const logoTarget = document.getElementById('app-logo-target');
+        const titleTarget = document.getElementById('app-title-target');
+        const logoSource = document.getElementById('splash-logo-source');
+        const titleSource = document.getElementById('splash-title-source');
+
+        if (logoTarget && titleTarget && logoSource && titleSource) {
+          const lRect = logoTarget.getBoundingClientRect();
+          const tRect = titleTarget.getBoundingClientRect();
+          const lsRect = logoSource.getBoundingClientRect();
+          const tsRect = titleSource.getBoundingClientRect();
+          
+          const centerX = window.innerWidth / 2;
+          const centerY = window.innerHeight / 2;
+
+          setFlightStyles({
+            '--tx': `${lRect.left + lRect.width/2 - (lsRect.left + lsRect.width/2)}px`,
+            '--ty': `${lRect.top + lRect.height/2 - (lsRect.top + lsRect.height/2)}px`,
+            '--scale': `${lRect.width / lsRect.width}`,
+            '--ttx': `${tRect.left + tRect.width/2 - (tsRect.left + tsRect.width/2)}px`,
+            '--tty': `${tRect.top + tRect.height/2 - (tsRect.top + tsRect.height/2)}px`,
+            '--tscale': `${tRect.width / tsRect.width}`,
+          } as React.CSSProperties);
+
+          // Soft-landing handoff at 1350ms (just before 1.5s flight concludes)
+          setTimeout(() => {
+            setAuthReady(true);
+          }, 1350); 
+        } else {
+          // Fallback if measurement fails
+          setAuthReady(true);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isExiting]);
 
   const handleThemeToggle = () => {
     const next = theme === 'light' ? 'dark' : 'light';
@@ -141,112 +184,142 @@ export default function App() {
 
   return (
     <>
-      {!authReady ? (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-1000">
-          <img src="/icons/logo-transparent-512.png" alt="OmniStudy Logo" className="w-32 h-32 sm:w-48 sm:h-48 animate-pulse" />
-          <h1 className="brand-logo text-[32px] sm:text-[48px]">
-            OmniStudy <span className="brand-logo-ai">AI</span>
-          </h1>
-          {/* Lens Flare Line */}
-          <div className="w-48 sm:w-64 h-[1.5px] bg-gradient-to-r from-transparent via-[#d946ef] to-transparent shadow-[0_0_20px_rgba(217,70,239,0.8)] opacity-80 -mt-4"></div>
+      {/* Splash Screen Layer */}
+      {(!authReady || isExiting) && (
+        <div 
+          className={`fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center gap-8 overflow-hidden transition-opacity duration-1000 ${authReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          style={flightStyles}
+        >
+          {/* Logo - Flight Ready */}
+          <div className="relative group">
+            <div className={`absolute -inset-8 bg-gradient-to-r from-cyan-500/20 to-magenta-500/20 rounded-full blur-3xl ${isExiting ? 'opacity-0 scale-0' : 'animate-pulse'} transition-all duration-700`}></div>
+            <div id="splash-logo-source" className={`splash-shared-element ${!isExiting ? 'animate-logo-float' : ''} ${isExiting ? 'splash-shared-logo-flying' : ''}`}>
+              <img 
+                src="/icons/logo-transparent-512.png" 
+                alt="OmniStudy Logo" 
+                className="w-32 h-32 sm:w-48 sm:h-48 relative z-10 animate-logo-entrance drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]" 
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-3">
+            {/* Title - Flight Ready */}
+            <h1 id="splash-title-source" className={`brand-logo text-[40px] sm:text-[56px] animate-title-reveal shimmer-text splash-shared-element ${isExiting ? 'splash-shared-title-flying' : ''}`}>
+              OmniStudy <span className="brand-logo-ai">AI</span>
+            </h1>
+            
+            {/* Tagline - Hidden during flight */}
+            <p className={`text-slate-400 text-xs sm:text-sm font-medium tracking-[0.3em] uppercase transition-all duration-300 ${!isExiting ? 'opacity-0 animate-title-reveal [animation-delay:0.4s]' : 'opacity-0 -translate-y-8 invisible'}`}>
+              Personalized Learning Universe
+            </p>
+          </div>
+
+          {/* Animated Lens Flare Line */}
+          <div className={`relative w-48 sm:w-80 h-[2px] transition-all duration-700 ${isExiting ? 'opacity-0 scale-x-0' : ''}`}>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-magenta-500 to-transparent shadow-[0_0_20px_rgba(217,70,239,0.8)] animate-flare-expansion [animation-delay:0.6s] opacity-0"></div>
+          </div>
         </div>
-      ) : (
-        <>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                isLoggedIn
-                  ? <Navigate to="/" replace />
-                  : <AuthPage onLogin={handleLogin} theme={theme} onThemeToggle={handleThemeToggle} />
-              }
-            />
-
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <Dashboard
-                    key={userId || 'guest'}
-                    userName={userName}
-                    profileImage={profileImage}
-                    onUploadClick={() => navigate('/upload')}
-                    onProfileClick={() => navigate('/profile')}
-                    onViewAllClick={() => navigate('/history')}
-                    theme={theme}
-                    onThemeToggle={handleThemeToggle}
-                    onViewSummary={handleViewSummary}
-                    onLogout={handleLogout}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/upload"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <UploadScreen
-                    onBack={() => navigate('/')}
-                    onUploadComplete={(fileName, id) => handleViewSummary(id, fileName)}
-                    theme={theme}
-                    onThemeToggle={handleThemeToggle}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/summary/:id"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <SummaryRoute theme={theme} onThemeToggle={handleThemeToggle} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route path="/summary" element={<Navigate to="/" replace />} />
-
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <ProfileSettings
-                    userName={userName}
-                    profileImage={profileImage}
-                    onBack={() => navigate('/')}
-                    onLogout={handleLogout}
-                    onNameChange={(name) => setUserName(name)}
-                    onProfileImageChange={(img) => setProfileImage(img)}
-                    theme={theme}
-                    onThemeToggle={handleThemeToggle}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/history"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <HistoryPage
-                    key={userId || 'guest'}
-                    onBack={() => navigate('/')}
-                    onViewSummary={handleViewSummary}
-                    theme={theme}
-                    onThemeToggle={handleThemeToggle}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="*" element={<Navigate to={isLoggedIn ? '/' : '/login'} replace />} />
-          </Routes>
-          <InstallPrompt />
-          <Toaster position="top-center" theme={theme} />
-        </>
       )}
+
+      {/* Main Content Layer */}
+      <div 
+        className={`w-full ${authReady ? 'animate-app-entrance' : 'invisible absolute h-0 overflow-hidden'}`}
+        style={{ pointerEvents: authReady ? 'auto' : 'none' }}
+      >
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              isLoggedIn
+                ? <Navigate to="/" replace />
+                : <AuthPage onLogin={handleLogin} theme={theme} onThemeToggle={handleThemeToggle} />
+            }
+          />
+
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <Dashboard
+                  key={userId || 'guest'}
+                  userName={userName}
+                  profileImage={profileImage}
+                  onUploadClick={() => navigate('/upload')}
+                  onProfileClick={() => navigate('/profile')}
+                  onViewAllClick={() => navigate('/history')}
+                  theme={theme}
+                  onThemeToggle={handleThemeToggle}
+                  onViewSummary={handleViewSummary}
+                  onLogout={handleLogout}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <UploadScreen
+                  onBack={() => navigate('/')}
+                  onUploadComplete={(fileName, id) => handleViewSummary(id, fileName)}
+                  theme={theme}
+                  onThemeToggle={handleThemeToggle}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/summary/:id"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <SummaryRoute theme={theme} onThemeToggle={handleThemeToggle} />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/summary" element={<Navigate to="/" replace />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <ProfileSettings
+                  userName={userName}
+                  profileImage={profileImage}
+                  onBack={() => navigate('/')}
+                  onLogout={handleLogout}
+                  onNameChange={(name) => setUserName(name)}
+                  onProfileImageChange={(img) => setProfileImage(img)}
+                  theme={theme}
+                  onThemeToggle={handleThemeToggle}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <HistoryPage
+                  key={userId || 'guest'}
+                  onBack={() => navigate('/')}
+                  onViewSummary={handleViewSummary}
+                  theme={theme}
+                  onThemeToggle={handleThemeToggle}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="*" element={<Navigate to={isLoggedIn ? '/' : '/login'} replace />} />
+        </Routes>
+        <InstallPrompt />
+        <Toaster position="top-center" theme={theme} />
+      </div>
     </>
   );
 }

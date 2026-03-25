@@ -405,9 +405,17 @@ export default function Dashboard({
       {/* Top Navigation */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <img src="/icons/logo-transparent-192.png" alt="OmniStudy Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <span className="brand-logo text-[20px] sm:text-[28px]">
+          <div className="flex items-center gap-1.5 animate-in fade-in duration-500">
+            <img 
+              id="app-logo-target"
+              src="/icons/logo-transparent-192.png" 
+              alt="OmniStudy Logo" 
+              className="w-6 h-6 sm:w-8 sm:h-8" 
+            />
+            <span 
+              id="app-title-target"
+              className="brand-logo text-[20px] sm:text-[28px]"
+            >
               OmniStudy <span className="brand-logo-ai">AI</span>
             </span>
           </div>
