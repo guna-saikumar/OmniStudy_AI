@@ -101,7 +101,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
                   {rIdx + 1}
                 </td>
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className={`px-6 py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[13px] ${cIdx === 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
+                <td key={cIdx} className={`px-4 sm:px-6 py-4 sm:py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[11px] sm:text-[13px] ${cIdx === 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
                     {cell}
                   </td>
                 ))}

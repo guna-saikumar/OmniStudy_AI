@@ -111,7 +111,7 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
                             <span className="inline-block px-3 py-1 bg-pink-500 text-white text-[10px] font-semibold rounded-full tracking-wider mb-3">
                               QUESTION {i + 1}
                             </span>
-                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">
                               {current.question}
                             </p>
                           </div>

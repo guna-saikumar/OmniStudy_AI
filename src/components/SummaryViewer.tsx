@@ -184,25 +184,43 @@ export default function SummaryViewer({
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <Skeleton className="h-6 w-32" />
+            <div className="flex items-center gap-1.5 animate-in fade-in duration-500">
+              <img 
+                id="app-logo-target"
+                src="/icons/logo-transparent-192.png" 
+                alt="OmniStudy Logo" 
+                className="w-6 h-6 sm:w-8 sm:h-8" 
+              />
+              <span 
+                id="app-title-target"
+                className="brand-logo text-[20px] sm:text-[28px]"
+              >
+                OmniStudy <span className="brand-logo-ai">AI</span>
+              </span>
             </div>
-            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-10 w-10 rounded-full" />
           </div>
         </header>
-        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8">
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8 animate-in fade-in duration-700 [animation-delay:300ms]">
           <div className="space-y-4">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-12 w-3/4" />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-6 w-24" />
+              <div className="flex-1" />
+              <div className="hidden sm:flex items-center gap-2">
+                 <Skeleton className="h-9 w-24 rounded-lg" />
+                 <Skeleton className="h-9 w-24 rounded-lg" />
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 pb-4 overflow-hidden">
+          <div className="flex gap-2 pb-4 overflow-hidden border-b border-gray-200 dark:border-gray-700">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <Skeleton key={i} className="h-10 w-28 rounded-xl flex-shrink-0" />
+              <Skeleton key={i} className="h-10 w-32 rounded-xl flex-shrink-0" />
             ))}
           </div>
           <div className="space-y-6">
-            <Skeleton className="h-[500px] w-full rounded-2xl" />
+            <Skeleton className="h-[600px] w-full rounded-3xl" />
           </div>
         </main>
       </div>
@@ -877,8 +895,8 @@ export default function SummaryViewer({
                     <div className="space-y-4">
                       {keyPoints.map((point: string, index: number) => (
                         <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
-                          <span className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
-                          <p className="text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
+                          <span className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 aspect-square rounded-full bg-blue-500 text-white text-[10px] sm:text-xs font-semibold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
+                          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
                         </div>
                       ))}
                     </div>
@@ -903,7 +921,7 @@ export default function SummaryViewer({
                             onClick={() => toggleSection(sIdx)}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 w-8 h-8 aspect-square min-w-[32px] min-h-[32px] rounded-full bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
+                              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 aspect-square rounded-full bg-indigo-500 text-white text-[10px] sm:text-xs font-semibold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
                               <h4 className="font-semibold text-gray-900 dark:text-gray-100">{section.heading}</h4>
                             </div>
                             {expandedSections[sIdx] === false ? <ChevronRight className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}

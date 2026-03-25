@@ -462,20 +462,59 @@ export default function Dashboard({
       </header>
       {isLoading ? (
 
-        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8 animate-in fade-in duration-700 [animation-delay:300ms]">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-5 w-96" />
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12 animate-in fade-in duration-700 [animation-delay:300ms]">
+          {/* Welcome Section Skeleton */}
+          <section className="text-center space-y-2">
+            <div className="flex justify-center"><Skeleton className="h-10 w-[480px]" /></div>
+            <div className="flex justify-center"><Skeleton className="h-5 w-[320px]" /></div>
+          </section>
+
+          {/* Upload Panel Skeleton */}
+          <div className="bg-white/40 dark:bg-black/40 backdrop-blur-lg border border-gray-200 dark:border-gray-800 rounded-[2rem] p-12 flex flex-col items-center justify-center space-y-4">
+             <Skeleton className="h-20 w-20 rounded-full" />
+             <Skeleton className="h-8 w-64" />
+             <Skeleton className="h-4 w-48" />
+             <Skeleton className="h-12 w-48 rounded-xl" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <Skeleton className="h-[400px] w-full rounded-2xl" />
+
+          {/* How It Works Skeleton */}
+          <section className="space-y-6">
+            <div className="flex justify-center"><Skeleton className="h-8 w-48" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white/80 dark:bg-black/80 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col items-center space-y-3">
+                  <Skeleton className="h-16 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              ))}
             </div>
-            <div className="space-y-6">
-              <Skeleton className="h-[200px] w-full rounded-2xl" />
-              <Skeleton className="h-[200px] w-full rounded-2xl" />
+          </section>
+
+          {/* History Section Skeleton */}
+          <section className="space-y-6">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-10 w-24" />
             </div>
-          </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white/80 dark:bg-black/80 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-20 rounded-lg" />
+                    <Skeleton className="h-8 w-20 rounded-lg" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </main>
       ) : (
         <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-12 animate-in fade-in duration-1000">
