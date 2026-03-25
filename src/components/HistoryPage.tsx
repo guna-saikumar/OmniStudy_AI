@@ -10,6 +10,7 @@ import {
 } from './ui/dropdown-menu';
 import api from '../utils/api';
 import { toast } from 'sonner';
+import { Skeleton } from './ui/skeleton';
 
 interface HistoryPageProps {
     onBack: () => void;
@@ -375,7 +376,24 @@ export default function HistoryPage({ onBack, onViewSummary, theme, onThemeToggl
                     {isLoading ? (
                         <div className="flex flex-col gap-4">
                             {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="h-24 w-full bg-white dark:bg-gray-800 animate-pulse rounded-xl" />
+                                <Card key={i} className="dark:bg-black/50 overflow-hidden">
+                                  <CardContent className="p-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                      <div className="flex items-start gap-4 flex-1">
+                                        <Skeleton className="h-12 w-12 rounded-lg" />
+                                        <div className="flex-1 space-y-2">
+                                          <Skeleton className="h-6 w-1/3" />
+                                          <Skeleton className="h-4 w-1/4" />
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Skeleton className="h-8 w-20 rounded-xl" />
+                                        <Skeleton className="h-8 w-20 rounded-xl" />
+                                        <Skeleton className="h-8 w-8 rounded-xl" />
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
                             ))}
                         </div>
                     ) : (

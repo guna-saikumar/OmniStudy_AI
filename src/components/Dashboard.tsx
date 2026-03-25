@@ -1,5 +1,6 @@
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Skeleton } from './ui/skeleton';
 import {
   BookOpen,
   Upload,
@@ -399,6 +400,37 @@ export default function Dashboard({
       if ((err as Error).name !== 'AbortError') toast.error('Failed to share');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+          <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="w-8 h-8 rounded-md" />
+              <Skeleton className="w-32 h-6" />
+            </div>
+            <Skeleton className="w-10 h-10 rounded-full" />
+          </div>
+        </header>
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-5 w-96" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <Skeleton className="h-[400px] w-full rounded-2xl" />
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

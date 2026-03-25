@@ -34,6 +34,7 @@ import InfographicViewer from './InfographicViewer';
 import FlashcardsViewer from './FlashcardsViewer';
 import ComparativeTableViewer from './ComparativeTableViewer';
 import * as htmlToImage from 'html-to-image';
+import { Skeleton } from './ui/skeleton';
 
 interface SummaryViewerProps {
   fileName: string;
@@ -180,11 +181,30 @@ export default function SummaryViewer({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="h-10 w-10 text-blue-500 animate-spin" />
-          <p className="text-gray-500">Loading your summary...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+          <div className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </header>
+        <main className="w-full px-4 sm:px-16 lg:px-24 xl:px-32 py-8 space-y-8">
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+          <div className="flex gap-2 pb-4 overflow-hidden">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Skeleton key={i} className="h-10 w-28 rounded-xl flex-shrink-0" />
+            ))}
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-[500px] w-full rounded-2xl" />
+          </div>
+        </main>
       </div>
     );
   }
