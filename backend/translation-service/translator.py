@@ -48,6 +48,23 @@ def _patched_tokenizer_setattr(self, name, value):
 
 PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
 
+# ── Compatibility Patch 3: Model tie_weights argument compatibility ────────────
+from transformers.modeling_utils import PreTrainedModel
+
+orig_post_init = PreTrainedModel.post_init
+
+def _patched_post_init(self, *args, **kwargs):
+    orig_tie = self.tie_weights
+    def safe_tie_weights(*t_args, **t_kwargs):
+        try:
+            return orig_tie(*t_args, **t_kwargs)
+        except TypeError:
+            return orig_tie()
+    self.tie_weights = safe_tie_weights
+    return orig_post_init(self, *args, **kwargs)
+
+PreTrainedModel.post_init = _patched_post_init
+
 import re
 import torch
 from typing import List, Optional
