@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Grid3x3 } from 'lucide-react';
+import MathText from './MathText';
 
 interface Cluster {
   category: string;
@@ -105,7 +106,7 @@ export default function TopicClustersViewer({ title, data }: TopicClustersViewer
                     </div>
                     <div className="min-w-0">
                       <h3 className={`font-semibold text-sm leading-snug ${style.text} line-clamp-2`}>
-                        {cluster.category}
+                        <MathText content={cluster.category} inline />
                       </h3>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         {cluster.items?.length || 0} keywords
@@ -120,7 +121,7 @@ export default function TopicClustersViewer({ title, data }: TopicClustersViewer
                         key={j}
                         className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium border ${style.border} bg-white dark:bg-gray-900 ${style.text}`}
                       >
-                        {item}
+                        <MathText content={item} inline />
                       </span>
                     ))}
                   </div>

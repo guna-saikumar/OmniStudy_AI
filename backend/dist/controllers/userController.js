@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleAuthUserCustom = exports.googleAuthUser = exports.updateUserProfile = exports.registerUser = exports.authUser = void 0;
+exports.resetPassword = exports.forgotPassword = exports.googleAuthUserCustom = exports.googleAuthUser = exports.updateUserProfile = exports.registerUser = exports.authUser = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
@@ -25,6 +26,7 @@ exports.authUser = (0, express_async_handler_1.default)(async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: user.profileImage,
             token: generateToken(user._id.toString()),
         });
     }
@@ -53,6 +55,7 @@ exports.registerUser = (0, express_async_handler_1.default)(async (req, res) => 
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: user.profileImage,
             token: generateToken(user._id.toString()),
         });
     }
@@ -69,6 +72,9 @@ exports.updateUserProfile = (0, express_async_handler_1.default)(async (req, res
     if (user) {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
+        if (req.body.profileImage) {
+            user.profileImage = req.body.profileImage;
+        }
         if (req.body.password) {
             user.password = req.body.password;
         }
@@ -77,6 +83,7 @@ exports.updateUserProfile = (0, express_async_handler_1.default)(async (req, res
             _id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
+            profileImage: updatedUser.profileImage,
             token: generateToken(updatedUser._id.toString()),
         });
     }
@@ -104,7 +111,7 @@ exports.googleAuthUser = (0, express_async_handler_1.default)(async (req, res) =
             res.status(401);
             throw new Error('Invalid Google token');
         }
-        const { email, name, sub: googleId } = payload;
+        const { email, name, picture, sub: googleId } = payload;
         // Check if user exists
         let user = await User_1.default.findOne({ email });
         if (!user) {
@@ -113,12 +120,14 @@ exports.googleAuthUser = (0, express_async_handler_1.default)(async (req, res) =
                 name,
                 email,
                 password: Math.random().toString(36).slice(-8), // Dummy password
+                profileImage: picture,
             });
         }
         res.json({
             _id: user._id,
             name: user.name,
             email: user.email,
+            profileImage: user.profileImage,
             token: generateToken(user._id.toString()),
         });
     }
@@ -131,7 +140,7 @@ exports.googleAuthUser = (0, express_async_handler_1.default)(async (req, res) =
 // @route   POST /api/users/google-custom
 // @access  Public
 exports.googleAuthUserCustom = (0, express_async_handler_1.default)(async (req, res) => {
-    const { email, name } = req.body;
+    const { email, name, profileImage } = req.body;
     if (!email) {
         res.status(400);
         throw new Error('User email is missing');
@@ -144,12 +153,122 @@ exports.googleAuthUserCustom = (0, express_async_handler_1.default)(async (req, 
             name,
             email,
             password: Math.random().toString(36).slice(-8), // Dummy password
+            profileImage: profileImage,
         });
     }
     res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
+        profileImage: user.profileImage,
         token: generateToken(user._id.toString()),
+    });
+});
+const nodemailer_1 = __importDefault(require("nodemailer"));
+// @desc    Forgot password - generate reset token and send email
+// @route   POST /api/users/forgotpassword
+// @access  Public
+exports.forgotPassword = (0, express_async_handler_1.default)(async (req, res) => {
+    const { email } = req.body;
+    const user = await User_1.default.findOne({ email });
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found with that email');
+    }
+    // Generate reset token
+    const resetToken = crypto_1.default.randomBytes(20).toString('hex');
+    // Hash and set to resetPasswordToken field
+    user.resetPasswordToken = crypto_1.default
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+    // Set expire (10 minutes)
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+    // Create transporter for sending the email
+    const transporter = nodemailer_1.default.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+    const mailOptions = {
+        from: `"OmniStudy AI Support" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: '🔐 OmniStudy AI - Password Reset Request',
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #3b82f6;">OMNISTUDY AI</h1>
+                    <p style="color: #666;">Security System</p>
+                </div>
+                <div style="background: #f8fafc; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                    <h2 style="color: #1e293b; margin-top: 0;">Password Reset Request</h2>
+                    <p>Hello <b>${user.name}</b>,</p>
+                    <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
+                    <p>To reset your password, click the button below. This link will expire in <b>10 minutes</b>.</p>
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="${resetUrl}" style="background: #3b82f6; color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">Reset My Password</a>
+                    </div>
+                    <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                        If the button doesn't work, copy and paste this link into your browser:<br>
+                        <a href="${resetUrl}" style="color: #3b82f6;">${resetUrl}</a>
+                    </p>
+                </div>
+                <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #94a3b8;">
+                    &copy; ${new Date().getFullYear()} OmniStudy AI. All rights reserved.
+                </div>
+            </div>
+        `,
+    };
+    try {
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Password reset email sent!' });
+    }
+    catch (err) {
+        console.error('Email sending failed:', err.message);
+        // DEV FALLBACK: If email sending fails, we still log the link to the console
+        // so you can test the rest of the flow! 
+        console.log('--- PASSWORD RESET LINK (FALLBACK) ---');
+        console.log(resetUrl);
+        console.log('--------------------------------------');
+        // Optional: In dev mode, we could return the link in the response, 
+        // but it's safer to just log it for now.
+        res.status(502);
+        throw new Error('Failed to send reset email. Please ensure your .env email credentials are correct.');
+    }
+});
+// @desc    Reset password
+// @route   PUT /api/users/resetpassword/:resettoken
+// @access  Public
+exports.resetPassword = (0, express_async_handler_1.default)(async (req, res) => {
+    // Get hashed token
+    const resetPasswordToken = crypto_1.default
+        .createHash('sha256')
+        .update(req.params.resettoken)
+        .digest('hex');
+    const user = await User_1.default.findOne({
+        resetPasswordToken,
+        resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+        res.status(400);
+        throw new Error('Invalid or expired reset token');
+    }
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    res.json({
+        success: true,
+        data: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user._id.toString()),
+        }
     });
 });

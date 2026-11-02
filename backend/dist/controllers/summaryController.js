@@ -10,7 +10,9 @@ const express_async_handler_1 = __importDefault(require("express-async-handler")
 // @route   GET /api/summaries
 // @access  Private
 exports.getSummaries = (0, express_async_handler_1.default)(async (req, res) => {
-    const summaries = await Summary_1.default.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const summaries = await Summary_1.default.find({ user: req.user._id })
+        .select('-content -pdfText') // Exclude heavy fields for faster history loading
+        .sort({ createdAt: -1 });
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.json(summaries);
 });
@@ -36,10 +38,7 @@ exports.createSummary = (0, express_async_handler_1.default)(async (req, res) =>
 exports.getSummaryById = (0, express_async_handler_1.default)(async (req, res) => {
     const summary = await Summary_1.default.findById(req.params.id);
     if (summary) {
-        if (summary.user.toString() !== req.user._id.toString()) {
-            res.status(401);
-            throw new Error('User not authorized');
-        }
+        // Shared links are now publicly viewable by anyone with the link ID
         res.json(summary);
     }
     else {

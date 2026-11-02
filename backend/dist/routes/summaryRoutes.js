@@ -8,11 +8,13 @@ const summaryController_1 = require("../controllers/summaryController");
 const uploadController_1 = require("../controllers/uploadController");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
-router.use(authMiddleware_1.protect); // All summary routes are protected
+// Allow public access to individual summaries for sharing
+router.get('/:id', summaryController_1.getSummaryById);
+// Protect other summary management routes
+router.use(authMiddleware_1.protect);
 router.get('/', summaryController_1.getSummaries);
 router.post('/', summaryController_1.createSummary);
 router.post('/upload', uploadController_1.upload.single('pdf'), uploadController_1.uploadAndGenerateSummary); // AI PDF upload
-router.get('/:id', summaryController_1.getSummaryById);
 router.delete('/:id', summaryController_1.deleteSummary);
 router.post('/:id/regenerate', summaryController_1.regenerateSummary);
 exports.default = router;

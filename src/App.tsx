@@ -3,11 +3,14 @@ import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 're
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import UploadScreen from './components/UploadScreen';
+import HandwrittenUploadScreen from './components/HandwrittenUploadScreen';
 import SummaryViewer from './components/SummaryViewer';
 import ProfileSettings from './components/ProfileSettings';
 import HistoryPage from './components/HistoryPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import InstallPrompt from './components/InstallPrompt';
+import { QuizPageContainer } from './components/QuizPageContainer';
+import { DocumentChatPage } from './components/DocumentChatPage';
 import { Toaster } from './components/ui/sonner';
 
 // ── Reads session state for the summary page (survives F5 refresh) ────────
@@ -28,6 +31,50 @@ function SummaryRoute({
       onBack={() => navigate('/')}
       theme={theme}
       onThemeToggle={onThemeToggle}
+    />
+  );
+}
+
+// ── Route for dedicated Quiz Page (/quiz/:summaryId) ──────────────────────
+function QuizRoute({
+  theme,
+  onThemeToggle,
+}: {
+  theme: 'light' | 'dark';
+  onThemeToggle: () => void;
+}) {
+  const { summaryId } = useParams<{ summaryId: string }>();
+  const navigate = useNavigate();
+  const fileName = sessionStorage.getItem(`summary_file_${summaryId}`) || 'Document';
+  return (
+    <QuizPageContainer
+      summaryId={summaryId ?? null}
+      fileName={fileName}
+      theme={theme}
+      onThemeToggle={onThemeToggle}
+      onBack={() => navigate(`/summary/${summaryId}`)}
+    />
+  );
+}
+
+// ── Route for dedicated Chat Page (/chat/:summaryId) ───────────────────────
+function ChatRoute({
+  theme,
+  onThemeToggle,
+}: {
+  theme: 'light' | 'dark';
+  onThemeToggle: () => void;
+}) {
+  const { summaryId } = useParams<{ summaryId: string }>();
+  const navigate = useNavigate();
+  const fileName = sessionStorage.getItem(`summary_file_${summaryId}`) || 'Document';
+  return (
+    <DocumentChatPage
+      summaryId={summaryId ?? null}
+      fileName={fileName}
+      theme={theme}
+      onThemeToggle={onThemeToggle}
+      onBack={() => navigate(`/summary/${summaryId}`)}
     />
   );
 }
@@ -55,18 +102,48 @@ function ProtectedRoute({
 export default function App() {
   const navigate = useNavigate();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('Student');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('userInfo');
+      return !!raw && !!JSON.parse(raw)?._id;
+    } catch {
+      return false;
+    }
+  });
+
+  const [userName, setUserName] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem('userInfo');
+      return (raw && JSON.parse(raw)?.name) || 'Student';
+    } catch {
+      return 'Student';
+    }
+  });
+
+  const [userId, setUserId] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('userInfo');
+      return (raw && JSON.parse(raw)?._id) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [profileImage, setProfileImage] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('userInfo');
+      return (raw && JSON.parse(raw)?.profileImage) || null;
+    } catch {
+      return null;
+    }
+  });
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  // authReady prevents ProtectedRoute from redirecting to /login
-  // before localStorage has been read on the very first render
   const [authReady, setAuthReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [flightStyles, setFlightStyles] = useState<React.CSSProperties>({});
 
-  // Restore auth + theme from localStorage on first load
+  // Restore theme from localStorage on first load
   useEffect(() => {
     // Theme
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -74,20 +151,6 @@ export default function App() {
     const initialTheme = savedTheme || systemTheme;
     setTheme(initialTheme);
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
-
-    // Auth
-    const raw = localStorage.getItem('userInfo');
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        setUserName(parsed.name || 'Student');
-        setUserId(parsed._id || null);
-        setProfileImage(parsed.profileImage || null);
-        setIsLoggedIn(true);
-      } catch (e) {
-        localStorage.removeItem('userInfo');
-      }
-    }
 
     console.log('[OmniStudy] Initializing application...');
     
@@ -245,6 +308,7 @@ export default function App() {
                   userName={userName}
                   profileImage={profileImage}
                   onUploadClick={() => navigate('/upload')}
+                  onHandwrittenUploadClick={() => navigate('/handwritten-upload')}
                   onProfileClick={() => navigate('/profile')}
                   onViewAllClick={() => navigate('/history')}
                   theme={theme}
@@ -263,6 +327,22 @@ export default function App() {
                 <UploadScreen
                   onBack={() => navigate('/')}
                   onUploadComplete={(fileName, id) => handleViewSummary(id, fileName)}
+                  onHandwrittenUploadClick={() => navigate('/handwritten-upload')}
+                  theme={theme}
+                  onThemeToggle={handleThemeToggle}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/handwritten-upload"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <HandwrittenUploadScreen
+                  onBack={() => navigate('/')}
+                  onUploadComplete={(fileName, id) => handleViewSummary(id, fileName)}
+                  onDigitalUploadClick={() => navigate('/upload')}
                   theme={theme}
                   onThemeToggle={handleThemeToggle}
                 />
@@ -275,6 +355,24 @@ export default function App() {
             element={
               <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <SummaryRoute theme={theme} onThemeToggle={handleThemeToggle} />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/quiz/:summaryId"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <QuizRoute theme={theme} onThemeToggle={handleThemeToggle} />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chat/:summaryId"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <ChatRoute theme={theme} onThemeToggle={handleThemeToggle} />
               </ProtectedRoute>
             }
           />

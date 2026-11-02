@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ImageIcon, Share2, Download, Maximize2, Layers, GitBranch, LayoutGrid, ZoomIn, ZoomOut } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import MathText from './MathText';
 
 interface InfographicSection {
   title: string;
@@ -113,7 +114,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
     
     return (
       <div 
-        className="relative flex items-center justify-center p-32 group transition-all duration-500 mx-auto overflow-visible"
+        className="relative flex items-center justify-center p-12 sm:p-20 group transition-all duration-500 mx-auto overflow-visible"
         style={{ width: `${hubWidth}px`, minHeight: `${hubHeight}px` }}
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -219,7 +220,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                     {i + 1}
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-black text-[13px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-none">{section.title}</h4>
+                    <h4 className="font-black text-[13px] leading-tight text-slate-800 dark:text-slate-100 uppercase tracking-tighter line-clamp-none"><MathText content={section.title} inline /></h4>
                     <div className="text-[9px] font-semibold text-slate-400/80 uppercase  mt-0.5">{section.type || 'Insight'}</div>
                   </div>
                 </div>
@@ -227,7 +228,7 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
                   {section.points.slice(0, 2).map((p: string, pi: number) => (
                     <li key={pi} className="flex gap-2">
                       <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0 opacity-60" style={{ backgroundColor: color }} />
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug font-semibold">{p}</p>
+                      <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug font-semibold"><MathText content={p} inline /></div>
                     </li>
                   ))}
                 </ul>
@@ -606,18 +607,14 @@ export default function InfographicViewer({ title, data, theme = 'dark', forcedV
       </CardHeader>
 
       <CardContent className={`flex-1 ${theme === 'dark' ? 'dark' : ''} bg-slate-50/30 dark:bg-slate-950 relative overflow-auto overscroll-contain custom-scrollbar z-10 p-0`}>
-        <div
-          className={`min-w-full min-h-full flex items-start py-10 sm:py-32 px-6 sm:px-40 ${
-            ['flow', 'flowchart'].includes(viewMode) ? 'sm:justify-center justify-start' : 'justify-start'
-          }`}
-        >
+        <div className="min-w-full min-h-full flex items-center justify-center py-10 sm:py-20 px-4 sm:px-12">
           <div
             ref={infoRef}
             data-infographic-view={viewMode}
-            className="transition-transform duration-300 relative bg-white dark:bg-slate-900 shadow-2xl rounded-[2rem]"
+            className="transition-transform duration-300 relative bg-white dark:bg-slate-900 shadow-2xl rounded-[2rem] mx-auto"
             style={{
               transform: `scale(${zoom / 100})`,
-              transformOrigin: window.innerWidth < 640 ? 'left top' : 'center top'
+              transformOrigin: 'center top'
             }}
           >
             {viewMode === 'hub' && renderHub()}

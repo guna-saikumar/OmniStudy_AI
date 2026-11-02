@@ -49,6 +49,11 @@ const summarySchema = new mongoose_1.Schema({
     pdfText: {
         type: String,
     },
+    // 'pdf' = uploaded digital PDF/DOCX/TXT, 'handwritten' = OCR from image/scanned PDF
+    sourceType: {
+        type: String,
+        default: 'pdf',
+    },
 }, {
     timestamps: true,
 });

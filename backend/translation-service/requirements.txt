@@ -1,0 +1,10 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+torch>=2.0.0
+transformers==4.38.2
+sentencepiece>=0.2.0
+indictranstoolkit>=0.1.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+

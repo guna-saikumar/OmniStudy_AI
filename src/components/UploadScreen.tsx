@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Moon,
   Sun,
+  PenLine,
 } from 'lucide-react';
 import api from '../utils/api';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 interface UploadScreenProps {
   onBack: () => void;
   onUploadComplete: (fileName: string, id: string) => void;
+  onHandwrittenUploadClick?: () => void;
   theme: 'light' | 'dark';
   onThemeToggle: () => void;
 }
@@ -26,6 +28,7 @@ interface UploadScreenProps {
 export default function UploadScreen({
   onBack,
   onUploadComplete,
+  onHandwrittenUploadClick,
   theme,
   onThemeToggle,
 }: UploadScreenProps) {
@@ -194,10 +197,29 @@ export default function UploadScreen({
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">Upload Your PDF</h1>
+            <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">Upload Document</h1>
             <p className="text-gray-600 dark:text-gray-400">
               Drop your file here or click to browse
             </p>
+          </div>
+
+          {/* Upload type toggle */}
+          <div className="flex justify-center">
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl gap-1">
+              <button
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm transition-all"
+              >
+                <Upload className="h-4 w-4 text-blue-500" />
+                Digital Documents
+              </button>
+              <button
+                onClick={onHandwrittenUploadClick}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all"
+              >
+                <PenLine className="h-4 w-4 text-violet-500" />
+                Handwritten Notes
+              </button>
+            </div>
           </div>
 
           {/* Upload Card */}

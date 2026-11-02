@@ -35,6 +35,11 @@ import FlashcardsViewer from './FlashcardsViewer';
 import ComparativeTableViewer from './ComparativeTableViewer';
 import * as htmlToImage from 'html-to-image';
 import { Skeleton } from './ui/skeleton';
+import { useTranslation, type ModuleType } from '../hooks/useTranslation';
+import TranslationControls from './TranslationControls';
+import TranslateAllPanel from './TranslateAllPanel';
+import { QuizSection } from './QuizSection';
+import { DocumentChatDrawer } from './DocumentChatDrawer';
 
 interface SummaryViewerProps {
   fileName: string;
@@ -46,17 +51,27 @@ interface SummaryViewerProps {
 
 type TabId = 'text' | 'mindmap' | 'infographic' | 'flashcards' | 'table' | 'outline';
 
+import MathText from './MathText';
+
 function HighlightedText({ text }: { text: string }) {
+  if (!text) return null;
+  if (text.includes('$') || text.includes('\\') || /[\^\_\{\}]/.test(text)) {
+    return <MathText content={text} inline />;
+  }
+
   const words = text.split(/(\s+)/);
   return (
     <>
       {words.map((word, i) => {
-        const clean = word.replace(/[^a-zA-Z0-9\-]/g, '');
+        const clean = word.replace(/^[^\w\u0900-\u0D7F]+|[^\w\u0900-\u0D7F]+$/g, '');
+        
+        // Highlight English shortforms (AI, CPU, RAM, API, etc.), numbers, percents, or capitalized/tech terms
         const isImportant =
-          /^[A-Z][a-zA-Z]{2,}$/.test(clean) ||
+          /^[A-Z0-9_\-]{2,8}$/.test(clean) ||
           /^\d+(\.\d+)?%?$/.test(clean) ||
-          /^[A-Z]{2,}$/.test(clean) ||
-          /^[a-zA-Z]+-[a-zA-Z]+$/.test(clean);
+          /^[A-Z][a-zA-Z0-9\-]{2,}$/.test(clean) ||
+          /^[a-zA-Z]+-[a-zA-Z]+$/.test(clean) ||
+          (/^[\u0900-\u0D7F]{4,}$/.test(clean) && (i % 6 === 0)); // Highlight key terms in Indic text
 
         return isImportant ? (
           <strong key={i} className="font-semibold text-blue-700 dark:text-blue-300">
@@ -82,6 +97,23 @@ export default function SummaryViewer({
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
+
+  // ── Translation Hook ─────────────────────────────────────────────────────
+  const {
+    activeLanguages,
+    showTranslated,
+    translationStates,
+    translationErrors,
+    isTranslatingAll,
+    serviceAvailable,
+    translateModule: doTranslateModule,
+    translateAll,
+    toggleOriginal,
+    resetAllToOriginal,
+    setModuleLanguage,
+    getDisplayContent,
+    hasTranslation,
+  } = useTranslation(summaryId);
 
   const toggleSection = (i: number) =>
     setExpandedSections(prev => ({ ...prev, [i]: prev[i] === false ? true : false }));
@@ -863,6 +895,15 @@ export default function SummaryViewer({
             </div>
           </div>
 
+          {/* ── Translation: Translate All Panel ────────────────────────── */}
+          <TranslateAllPanel
+            translationStates={translationStates}
+            isTranslatingAll={isTranslatingAll}
+            serviceAvailable={serviceAvailable}
+            onTranslateAll={translateAll}
+            onResetOriginal={resetAllToOriginal}
+          />
+
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
             {tabs.map(tab => {
               const isActive = activeTab === tab.id;
@@ -888,15 +929,18 @@ export default function SummaryViewer({
             <div id="export-text" className={activeTab === 'text' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
-                  <CardTitle className="text-lg sm:text-xl font-semibold">Key Points</CardTitle>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <CardTitle className="text-lg sm:text-xl font-semibold">Key Points</CardTitle>
+                    <TranslationControls moduleType="text" summaryId={summaryId} state={translationStates.text} activeLanguage={activeLanguages.text} showTranslated={showTranslated.text} hasTranslation={(lang) => hasTranslation('text', lang)} error={translationErrors.text} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
-                      {keyPoints.map((point: string, index: number) => (
-                        <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1">
+                      {(getDisplayContent('text', keyPoints) as string[]).map((point: string, index: number) => (
+                        <div key={index} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 transition-all hover:translate-x-1" style={{ overflow: 'hidden' }}>
                           <span className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 aspect-square rounded-full bg-blue-500 text-white text-[10px] sm:text-xs font-semibold flex items-center justify-center shadow-lg shadow-blue-500/20 leading-none">{index + 1}</span>
-                          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-200 leading-relaxed"><HighlightedText text={point} /></p>
+                          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-200 leading-relaxed min-w-0 flex-1" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}><HighlightedText text={point} /></p>
                         </div>
                       ))}
                     </div>
@@ -909,12 +953,15 @@ export default function SummaryViewer({
             <div id="export-outline" className={activeTab === 'outline' ? 'block' : 'hidden'}>
               <Card className="dark:bg-gray-950 border-none shadow-xl rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="bg-white/50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
-                  <CardTitle className="text-lg sm:text-xl font-semibold">Outline</CardTitle>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <CardTitle className="text-lg sm:text-xl font-semibold">Outline</CardTitle>
+                    <TranslationControls moduleType="documentOutline" summaryId={summaryId} state={translationStates.documentOutline} activeLanguage={activeLanguages.documentOutline} showTranslated={showTranslated.documentOutline} hasTranslation={(lang) => hasTranslation('documentOutline', lang)} error={translationErrors.documentOutline} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-8">
                   <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
-                      {documentOutline.map((section, sIdx) => (
+                      {(getDisplayContent('documentOutline', documentOutline) as typeof documentOutline).map((section, sIdx) => (
                         <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
                           <button
                             className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-indigo-50/30 to-blue-50/30 dark:from-indigo-950/20 dark:to-blue-950/20 hover:from-indigo-100/40 transition-all"
@@ -922,19 +969,19 @@ export default function SummaryViewer({
                           >
                             <div className="flex items-center gap-4">
                               <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 aspect-square rounded-full bg-indigo-500 text-white text-[10px] sm:text-xs font-semibold flex items-center justify-center shadow-lg shadow-indigo-500/20">{sIdx + 1}</div>
-                              <h4 className="font-semibold text-gray-900 dark:text-gray-100">{section.heading}</h4>
+                              <h4 className="font-semibold text-gray-900 dark:text-gray-100"><MathText content={section.heading} inline /></h4>
                             </div>
                             {expandedSections[sIdx] === false ? <ChevronRight className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
                           </button>
                           {expandedSections[sIdx] !== false && (
                             <div className="p-6 space-y-4 bg-white dark:bg-gray-950/50">
                               {section.bullets.map((b, bIdx) => (
-                                <div key={bIdx} className="flex gap-3"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" /><p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{b}</p></div>
+                                <div key={bIdx} className="flex gap-3"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" /><div className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-0 flex-1" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}><MathText content={b} /></div></div>
                               ))}
                               {section.subSections?.map((sub, ssIdx) => (
                                 <div key={ssIdx} className="pl-6 border-l-2 border-indigo-50 dark:border-indigo-900/50 py-1">
-                                  <h5 className="text-xs font-black text-indigo-500 uppercase tracking-tighter mb-2">{sub.title}</h5>
-                                  <div className="space-y-1">{sub.bullets.map((sb, sbIdx) => <p key={sbIdx} className="text-xs text-gray-500 dark:text-gray-400">— {sb}</p>)}</div>
+                                  <h5 className="text-xs font-black text-indigo-500 uppercase tracking-tighter mb-2"><MathText content={sub.title} inline /></h5>
+                                  <div className="space-y-1">{sub.bullets.map((sb, sbIdx) => <div key={sbIdx} className="text-xs text-gray-500 dark:text-gray-400">— <MathText content={sb} inline /></div>)}</div>
                                 </div>
                               ))}
                             </div>
@@ -949,22 +996,34 @@ export default function SummaryViewer({
 
             {/* Tab: Mindmap */}
             <div id="export-mindmap" className={activeTab === 'mindmap' ? 'block' : 'hidden'}>
-              <MindMapViewer title={docTitle} data={finalMindMapData} theme={theme} />
+              <div className="flex items-center justify-end mb-3">
+                <TranslationControls moduleType="mindMapData" summaryId={summaryId} state={translationStates.mindMapData} activeLanguage={activeLanguages.mindMapData} showTranslated={showTranslated.mindMapData} hasTranslation={(lang) => hasTranslation('mindMapData', lang)} error={translationErrors.mindMapData} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+              </div>
+              <MindMapViewer title={docTitle} data={getDisplayContent('mindMapData', finalMindMapData)} theme={theme} />
             </div>
 
             {/* Tab: Infographic */}
             <div id="export-infographic" className={activeTab === 'infographic' ? 'block' : 'hidden'}>
-              <InfographicViewer title={docTitle} data={summary.content?.infographicData} theme={theme} onViewModeChange={setActiveInfographicMode} />
+              <div className="flex items-center justify-end mb-3">
+                <TranslationControls moduleType="infographicData" summaryId={summaryId} state={translationStates.infographicData} activeLanguage={activeLanguages.infographicData} showTranslated={showTranslated.infographicData} hasTranslation={(lang) => hasTranslation('infographicData', lang)} error={translationErrors.infographicData} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+              </div>
+              <InfographicViewer title={docTitle} data={getDisplayContent('infographicData', summary.content?.infographicData)} theme={theme} onViewModeChange={setActiveInfographicMode} />
             </div>
 
             {/* Tab: Flashcards */}
             <div id="export-flashcards" className={activeTab === 'flashcards' ? 'block' : 'hidden'}>
-              <FlashcardsViewer title={docTitle} data={summary.content?.flashcards} />
+              <div className="flex items-center justify-end mb-3">
+                <TranslationControls moduleType="flashcards" summaryId={summaryId} state={translationStates.flashcards} activeLanguage={activeLanguages.flashcards} showTranslated={showTranslated.flashcards} hasTranslation={(lang) => hasTranslation('flashcards', lang)} error={translationErrors.flashcards} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+              </div>
+              <FlashcardsViewer title={docTitle} data={getDisplayContent('flashcards', summary.content?.flashcards)} />
             </div>
 
             {/* Tab: Table */}
             <div id="export-table" className={activeTab === 'table' ? 'block' : 'hidden'}>
-              <ComparativeTableViewer title={docTitle} data={summary.content?.comparativeTable} theme={theme} />
+              <div className="flex items-center justify-end mb-3">
+                <TranslationControls moduleType="comparativeTable" summaryId={summaryId} state={translationStates.comparativeTable} activeLanguage={activeLanguages.comparativeTable} showTranslated={showTranslated.comparativeTable} hasTranslation={(lang) => hasTranslation('comparativeTable', lang)} error={translationErrors.comparativeTable} onLanguageChange={setModuleLanguage} onTranslate={doTranslateModule} onToggleOriginal={toggleOriginal} />
+              </div>
+              <ComparativeTableViewer title={docTitle} data={getDisplayContent('comparativeTable', summary.content?.comparativeTable)} theme={theme} />
             </div>
 
             {/* Hidden: All Infographic Modes for Export (Used by handleDownloadPDF) */}
@@ -982,6 +1041,23 @@ export default function SummaryViewer({
           </div>
         </div>
       </main>
+
+      {/* ── Document-Grounded AI Chatbot Floating Overlay ───────────────────── */}
+      <DocumentChatDrawer
+        summaryId={summaryId}
+        docTitle={docTitle}
+        theme={theme}
+      />
+
+      {/* ── Test Yourself / AI Quiz Overlay Sticky Action ───────────────────── */}
+      <QuizSection
+        summaryId={summaryId}
+        docTitle={docTitle}
+        fileName={summary?.fileName || fileName}
+        theme={theme}
+        onThemeToggle={onThemeToggle}
+        activeLanguage={activeLanguages.text}
+      />
     </div>
   );
 }

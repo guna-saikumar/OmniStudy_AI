@@ -112,6 +112,72 @@ function smartFallback(pdfText: string, fileName: string): GeneratedSummaryConte
 
 // ─── Gemini AI Processing Path ───────────────────────────────────────────────
 
+function getGenAIInstance(): GoogleGenerativeAI {
+    const apiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey) {
+        console.warn('[Gemini AI Warning] GEMINI_API_KEY is not configured in process.env');
+    }
+    return new GoogleGenerativeAI(apiKey);
+}
+
+// Helper function to handle 503 / 429 errors with model fallback & exponential retries
+export async function callGeminiWithRetry(
+    prompt: string,
+    responseFormat: 'json' | 'text' = 'json'
+): Promise<string> {
+    const genAIInstance = getGenAIInstance();
+    const modelsToTry = [
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-3.5-flash",
+    ];
+    let lastError: any = null;
+
+    for (const modelName of modelsToTry) {
+        try {
+            const genConfig: any = {
+                maxOutputTokens: responseFormat === 'json' ? 16384 : 1200,
+            };
+            if (responseFormat === 'json') {
+                genConfig.responseMimeType = "application/json";
+            }
+
+            const model = genAIInstance.getGenerativeModel({
+                model: modelName,
+                generationConfig: genConfig
+            });
+
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    const res = await model.generateContent(prompt);
+                    return res.response.text();
+                } catch (err: any) {
+                    lastError = err;
+                    const status = err.status || err.statusCode;
+                    const errMsg = err.message || '';
+                    const isTransient = status === 503 || status === 429 || errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('quota') || errMsg.includes('Service Unavailable');
+
+                    if (isTransient && attempt < 3) {
+                        const delay = attempt * 2000;
+                        console.warn(`[Gemini Retry] Model ${modelName} returned temporary error (${status || '503'}), retrying in ${delay}ms (attempt ${attempt}/3)...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else if (isTransient) {
+                        console.warn(`[Gemini Retry] Model ${modelName} exhausted attempts due to high demand. Trying next fallback model...`);
+                        break;
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+        } catch (e: any) {
+            lastError = e;
+            console.warn(`[Gemini Model Fallback] Model ${modelName} failed, switching model...`);
+        }
+    }
+
+    throw lastError || new Error('All Gemini AI models are currently experiencing high demand.');
+}
+
 export const generateSummaryFromText = async (pdfText: string, fileName: string): Promise<GeneratedSummaryContent> => {
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
         return smartFallback(pdfText, fileName);
@@ -120,12 +186,8 @@ export const generateSummaryFromText = async (pdfText: string, fileName: string)
     const systemPrompt = `You are an advanced AI PDF summarization engine. 
 Your goal is to be extremely thorough and exhaustive. You MUST conduct a deep, page-by-page analysis of the FULL provided document to generate exactly the study content required by its complexity.
 Never skip sections, pages, or logical segments. Ensure that the information in each module reflects the full scale of the document.
+MATH & FORMULAS RULE: Format any mathematical equations, formulas, symbols, variables, or calculations using LaTeX math notation wrapped in $...$ for inline math or $$...$$ for block math across all generated fields (key points, outline, flashcards, tables, mind maps, infographics).
 Return ONLY raw JSON without markdown formatting. Document: "${fileName}"`;
-
-    const model = genAI.getGenerativeModel({
-        model: "gemini-flash-latest",
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 16384 }
-    });
 
     const textLimit = 1000000; // Increased to cover massive textbooks (up to ~250k-300k words)
     const truncatedText = pdfText.length > textLimit ? pdfText.substring(0, textLimit) : pdfText;
@@ -215,8 +277,8 @@ RULES:
 
         // PART 1
         console.log("[Gemini] Starting Sequential Analysis (Part 1: Key Points & Outline)...");
-        const result1 = await model.generateContent(systemPrompt + "\n\n" + userPromptPart1);
-        const parsedPart1 = JSON.parse(result1.response.text());
+        const rawText1 = await callGeminiWithRetry(systemPrompt + "\n\n" + userPromptPart1);
+        const parsedPart1 = JSON.parse(rawText1);
 
         // Small delay to respect rate limits (RPM)
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -224,8 +286,8 @@ RULES:
         console.log("[Gemini] Processing Part 2: Visuals & Flashcards...");
 
         // PART 2
-        const result2 = await model.generateContent(systemPrompt + "\n\n" + userPromptPart2);
-        const parsedPart2 = JSON.parse(result2.response.text());
+        const rawText2 = await callGeminiWithRetry(systemPrompt + "\n\n" + userPromptPart2);
+        const parsedPart2 = JSON.parse(rawText2);
 
         console.log("[Gemini] All tasks completed.");
 
@@ -261,6 +323,7 @@ RULES:
 
     } catch (err: any) {
         console.error("[Gemini AI Error]", err);
-        throw new Error(`AI processing failed: ${err.message}. Please try a slightly smaller file.`);
+        console.warn("[Gemini AI Fallback] Gemini API unavailable or high demand. Generating smart local fallback...");
+        return smartFallback(pdfText, fileName);
     }
 };

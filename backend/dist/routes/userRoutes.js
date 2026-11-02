@@ -11,5 +11,7 @@ router.post('/', userController_1.registerUser);
 router.post('/login', userController_1.authUser);
 router.post('/google', userController_1.googleAuthUser);
 router.post('/google-custom', userController_1.googleAuthUserCustom);
+router.post('/forgotpassword', userController_1.forgotPassword);
+router.put('/resetpassword/:resettoken', userController_1.resetPassword);
 router.put('/profile', authMiddleware_1.protect, userController_1.updateUserProfile);
 exports.default = router;

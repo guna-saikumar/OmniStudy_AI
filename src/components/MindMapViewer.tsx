@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ZoomIn, ZoomOut, Maximize2, Network, Layers, Presentation, Download } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import MathText from './MathText';
 
 interface MindMapNode {
   id?: string;
@@ -158,13 +159,17 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark', content
                 <div style={{ position: 'absolute', top: '0', right: '32px', padding: '6px 16px', backgroundColor: color, color: 'white', fontWeight: '900', fontSize: '10px', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px', textTransform: 'uppercase', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>0{i + 1}. SECTION</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', width: '100%' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', flexShrink: 0 }}>{emoji}</div>
-                  <h3 className={theme === 'dark' ? 'text-white' : 'text-slate-800'} style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.2', margin: 0, flex: 1 }}>{label}</h3>
+                  <h3 className={theme === 'dark' ? 'text-white' : 'text-slate-800'} style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.2', margin: 0, flex: 1 }}>
+                    <MathText content={label} inline />
+                  </h3>
                 </div>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {bullets.map((b: any, bi: number) => (
                     <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
-                      <span className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}>{b.name || b.label}</span>
+                      <span className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}>
+                        <MathText content={b.name || b.label} inline />
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -188,13 +193,17 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark', content
                 <div style={{ position: 'absolute', top: '0', left: '32px', padding: '6px 16px', backgroundColor: color, color: 'white', fontWeight: '900', fontSize: '10px', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px', textTransform: 'uppercase', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>0{globalIdx + 1}. SECTION</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', width: '100%' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', flexShrink: 0 }}>{emoji}</div>
-                  <h3 className={theme === 'dark' ? 'text-white' : 'text-slate-800'} style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.2', margin: 0, flex: 1 }}>{label}</h3>
+                  <h3 className={theme === 'dark' ? 'text-white' : 'text-slate-800'} style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.2', margin: 0, flex: 1 }}>
+                    <MathText content={label} inline />
+                  </h3>
                 </div>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {bullets.map((b: any, bi: number) => (
                     <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, marginTop: '7px', flexShrink: 0 }} />
-                      <span className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}>{b.name || b.label}</span>
+                      <span className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} style={{ fontSize: '13px', fontWeight: '700', lineHeight: '1.4' }}>
+                        <MathText content={b.name || b.label} inline />
+                      </span>
                     </div>
                   ))}
                 </div>

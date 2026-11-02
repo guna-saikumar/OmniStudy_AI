@@ -51,7 +51,11 @@ const connectDB = async () => {
         catch (e) {
             console.error('Error auto-fixing URI:', e);
         }
-        const conn = await mongoose_1.default.connect(uri);
+        const conn = await mongoose_1.default.connect(uri, {
+            serverSelectionTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 10,
+        });
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     }
     catch (error) {

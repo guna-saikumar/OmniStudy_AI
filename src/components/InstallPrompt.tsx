@@ -10,7 +10,9 @@ interface BeforeInstallPromptEvent extends Event {
 const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    return localStorage.getItem('pwa_install_dismissed') === 'true';
+  });
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ const InstallPrompt: React.FC = () => {
                         || (window.navigator as any).standalone 
                         || document.referrer.includes('android-app://');
 
-    if (isStandalone) {
+    if (isStandalone || localStorage.getItem('pwa_install_dismissed') === 'true') {
       setIsVisible(false);
       return;
     }
@@ -30,7 +32,7 @@ const InstallPrompt: React.FC = () => {
 
     // Capture Android/Chrome's native install prompt from global check
     const checkGlobalPrompt = () => {
-      // ONLY set visible if it hasn't been dismissed manually in this session
+      // ONLY set visible if it hasn't been dismissed manually
       if ((window as any).deferredInstallPrompt && !isDismissed) {
         setDeferredPrompt((window as any).deferredInstallPrompt);
         setIsVisible(true);
@@ -57,15 +59,16 @@ const InstallPrompt: React.FC = () => {
       setDeferredPrompt(null);
       (window as any).deferredInstallPrompt = null;
       setIsVisible(false);
+      localStorage.setItem('pwa_install_dismissed', 'true');
       toast.success("OmniStudy AI added to your home screen!");
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show banner on EVERY fresh load if not in standalone mode and not dismissed
+    // Show banner on fresh load if not in standalone mode and not dismissed
     const timer = setTimeout(() => {
-      if (!isStandalone && !isDismissed) {
+      if (!isStandalone && !isDismissed && localStorage.getItem('pwa_install_dismissed') !== 'true') {
         setIsVisible(true);
       }
     }, 1500);
@@ -76,11 +79,12 @@ const InstallPrompt: React.FC = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isDismissed]); // Re-run effect or check state when dismissal changes
+  }, [isDismissed]);
 
   const dismissBanner = () => {
     setIsDismissed(true);
     setIsVisible(false);
+    localStorage.setItem('pwa_install_dismissed', 'true');
   };
 
   const handleInstallClick = async () => {

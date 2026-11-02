@@ -295,3 +295,18 @@
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     overflow: hidden !important;
 }
+
+/* ── MathJax / KaTeX overflow handling ────────────────────────────────────── */
+mjx-container,
+.katex,
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+}
+
+/* ── Multilingual text wrapping (Hindi, Telugu, Kannada, Malayalam, Tamil) ─ */
+p, div, span, li, td, th, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}

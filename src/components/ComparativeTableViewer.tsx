@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
-import { Table, Download, FileSpreadsheet } from 'lucide-react';
+import { Download, Table, Sparkles, Layers, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import MathText from './MathText';
 import * as htmlToImage from 'html-to-image';
 import { toast } from 'sonner';
 
@@ -86,7 +87,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
               <th className="px-6 py-4 font-black text-gray-400 dark:text-gray-500 w-16 text-center text-[10px] uppercase">Ref</th>
               {table.headers.map((h, i) => (
                 <th key={i} className="px-6 py-4 font-black text-slate-800 dark:text-slate-200 text-[11px] uppercase tracking-tighter">
-                  {h}
+                  <MathText content={h} inline />
                 </th>
               ))}
             </tr>
@@ -101,8 +102,8 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
                   {rIdx + 1}
                 </td>
                 {row.map((cell, cIdx) => (
-                <td key={cIdx} className={`px-4 sm:px-6 py-4 sm:py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[11px] sm:text-[13px] ${cIdx === 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
-                    {cell}
+                  <td key={cIdx} className={`px-4 sm:px-6 py-4 sm:py-5 text-gray-700 dark:text-gray-300 align-top leading-relaxed text-[11px] sm:text-[13px] ${cIdx === 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'font-medium'}`}>
+                    <MathText content={cell} inline />
                   </td>
                 ))}
               </tr>

@@ -31,6 +31,8 @@ import {
   ExternalLink,
   Moon,
   Sun,
+  PenLine,
+  FileImage,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
@@ -54,6 +56,7 @@ interface DashboardProps {
   userName: string;
   profileImage: string | null;
   onUploadClick: () => void;
+  onHandwrittenUploadClick?: () => void;
   onProfileClick: () => void;
   theme: 'light' | 'dark';
   onThemeToggle: () => void;
@@ -66,6 +69,7 @@ export default function Dashboard({
   userName,
   profileImage,
   onUploadClick,
+  onHandwrittenUploadClick,
   onProfileClick,
   theme,
   onThemeToggle,
@@ -529,46 +533,58 @@ export default function Dashboard({
         </section>
 
         {/* Upload Panel */}
-        <Card className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-[2rem] hover:border-blue-400 hover:shadow-2xl transition-all duration-500">
-          <CardContent className="pt-8 pb-8 sm:pt-12 sm:pb-12">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-full">
-                <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Digital Documents card */}
+          <Card className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-[2rem] hover:border-blue-400 hover:shadow-2xl transition-all duration-500">
+            <CardContent className="pt-8 pb-8 sm:pt-10 sm:pb-10">
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-full">
+                  <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">Digital Documents</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                    Supports PDF, PPT, DOCX, TXT formats
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2 py-1">
+                  {['PDF','PPT','DOCX','TXT'].map((ext, i) => (
+                    <div key={ext} className={`text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm ${['bg-red-500','bg-orange-500','bg-blue-500','bg-teal-500'][i]}`}>{ext}</div>
+                  ))}
+                </div>
+                <Button size="lg" className="bg-blue-500 hover:bg-blue-600" onClick={onUploadClick}>
+                  <Upload className="mr-2 h-5 w-5" /> Upload PDF
+                </Button>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">Upload Your PDF</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                  Supports PDF, PPT, DOCX, TXT formats
-                </p>
-              </div>
+            </CardContent>
+          </Card>
 
-              {/* File Extension Icons */}
-              <div className="flex flex-wrap items-center justify-center gap-3 py-2">
-                <div className="bg-red-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
-                  PDF
+          {/* Handwritten Notes card */}
+          <Card className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg border-2 border-dashed border-violet-300 dark:border-violet-700 rounded-[2rem] hover:border-violet-500 hover:shadow-2xl transition-all duration-500">
+            <CardContent className="pt-8 pb-8 sm:pt-10 sm:pb-10">
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="bg-violet-50 dark:bg-violet-950 p-6 rounded-full relative">
+                  <FileImage className="h-8 w-8 sm:h-12 sm:w-12 text-violet-500" />
+                  <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
                 </div>
-                <div className="bg-orange-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
-                  PPT
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">Handwritten Notes</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                    Photos, whiteboard shots, notebook pages, scanned PDFs
+                  </p>
                 </div>
-                <div className="bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
-                  DOCX
+                <div className="flex flex-wrap items-center justify-center gap-2 py-1">
+                  {['JPG','PNG','WEBP','PDF'].map((ext, i) => (
+                    <div key={ext} className={`text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm ${['bg-violet-500','bg-purple-500','bg-fuchsia-500','bg-pink-500'][i]}`}>{ext}</div>
+                  ))}
                 </div>
-                <div className="bg-teal-500 text-white px-3 py-1.5 rounded-md font-semibold text-sm shadow-sm">
-                  TXT
-                </div>
+                <Button size="lg" className="bg-violet-600 hover:bg-violet-700 text-white" onClick={onHandwrittenUploadClick}>
+                  <PenLine className="mr-2 h-5 w-5" /> Upload Handwritten Notes
+                </Button>
               </div>
-
-              <Button
-                size="lg"
-                className="bg-blue-500 hover:bg-blue-600 text-base sm:text-lg px-6 sm:px-8"
-                onClick={onUploadClick}
-              >
-                <Upload className="mr-2 h-5 w-5" />
-                Upload PDF
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Visual Stepper */}
         <section className="space-y-6">
@@ -825,7 +841,23 @@ export default function Dashboard({
               </CardContent>
             </Card>
 
-            {/* Feature 3 - Export */}
+            {/* Feature 3 - Handwritten Notes */}
+            <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-1.5">
+                  <PenLine className="h-5 w-5 text-violet-500" />
+                  <CardTitle className="text-base">Handwritten Notes</CardTitle>
+                </div>
+              </CardHeader>
+              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
+              <CardContent className="pt-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Upload photos of handwritten notes, whiteboard shots, or scanned PDFs. AI-powered OCR extracts and structures the text, then generates full summaries, mind maps, flashcards, and more.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Feature 4 - Export */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-1.5">
@@ -841,7 +873,7 @@ export default function Dashboard({
               </CardContent>
             </Card>
 
-            {/* Feature 4 - Share */}
+            {/* Feature 5 - Share */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-1.5">
@@ -857,7 +889,7 @@ export default function Dashboard({
               </CardContent>
             </Card>
 
-            {/* Feature 5 - History */}
+            {/* Feature 6 - History */}
             <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-1.5">
