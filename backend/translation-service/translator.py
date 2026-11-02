@@ -6,6 +6,24 @@ between English and Indic languages. Loads models once at startup
 and provides efficient batch translation.
 """
 
+import sys
+import types
+
+# ── Compatibility Patch for IndicTrans2 with Transformers >= 4.45 / 5.x ────────
+if "transformers.onnx" not in sys.modules:
+    class DummyOnnxConfig:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class OnnxModule(types.ModuleType):
+        def __getattr__(self, name):
+            return DummyOnnxConfig
+
+    onnx_mod = OnnxModule("transformers.onnx")
+    onnx_mod.OnnxConfig = DummyOnnxConfig
+    onnx_mod.OnnxSeq2SeqConfigWithPast = DummyOnnxConfig
+    sys.modules["transformers.onnx"] = onnx_mod
+
 import re
 import torch
 from typing import List, Optional
