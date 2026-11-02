@@ -285,11 +285,14 @@ class TranslationEngine:
         return segments
 
     def _preprocess(self, texts: List[str], src_lang: str, tgt_lang: str) -> List[str]:
-        """Preprocess texts using IndicProcessor if available."""
+        """Preprocess texts: IndicTransTokenizer strictly requires language tags prefix."""
         if self.processor:
-            return self.processor.preprocess_batch(texts, src_lang=src_lang, tgt_lang=tgt_lang)
-        # Basic fallback: just return texts as-is
-        return texts
+            try:
+                return self.processor.preprocess_batch(texts, src_lang=src_lang, tgt_lang=tgt_lang)
+            except Exception:
+                pass
+        # Fallback: prefix each text with the required source and target language tags
+        return [f"{src_lang} {tgt_lang} {t.strip()}" for t in texts]
 
     def _postprocess(self, texts: List[str], tgt_lang: str) -> List[str]:
         """Postprocess translated texts using IndicProcessor if available."""
@@ -297,8 +300,16 @@ class TranslationEngine:
             try:
                 return self.processor.postprocess_batch(texts, lang=tgt_lang)
             except Exception:
-                return texts
-        return texts
+                pass
+        # Fallback: strip any accidental language tag prefix if present in output
+        cleaned = []
+        for t in texts:
+            val = t.strip()
+            # If target language tag leaked into output, strip it
+            if val.startswith(tgt_lang):
+                val = val[len(tgt_lang):].strip()
+            cleaned.append(val)
+        return cleaned
 
     def translate_batch(
         self,
