@@ -36,6 +36,18 @@ if "transformers.onnx" not in sys.modules:
     sys.modules["transformers.onnx.utils"] = utils_mod
     onnx_mod.utils = utils_mod
 
+# ── Compatibility Patch: Tokenizer _special_tokens_map initialization ──────────
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+orig_tokenizer_setattr = PreTrainedTokenizerBase.__setattr__
+
+def _patched_tokenizer_setattr(self, name, value):
+    if not hasattr(self, "_special_tokens_map"):
+        object.__setattr__(self, "_special_tokens_map", {})
+    orig_tokenizer_setattr(self, name, value)
+
+PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
+
 import re
 import torch
 from typing import List, Optional
