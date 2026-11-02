@@ -99,6 +99,16 @@ class HealthResponse(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
+@app.get("/")
+async def root():
+    """Root endpoint for health checks and status."""
+    return {
+        "status": "online",
+        "service": "OmniStudy AI Translation Service",
+        "model_loaded": engine.is_loaded,
+    }
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Check if the service is running and models are loaded."""
@@ -206,8 +216,25 @@ async def translate_module_endpoint(request: TranslateModuleRequest):
         raise HTTPException(status_code=500, detail=f"Module translation failed: {str(e)}")
 
 
+# ── Optional Gradio UI for Hugging Face Spaces ─────────────────────────────
+try:
+    import gradio as gr
+
+    with gr.Blocks(title="OmniStudy AI Translation Service") as demo:
+        gr.Markdown("# 🌐 OmniStudy AI — IndicTrans2 Translation Service")
+        gr.Markdown("Microservice is running and ready to accept API requests from OmniStudy backend.")
+        gr.Markdown("**API Endpoints:** `/health`, `/languages`, `/translate`, `/translate/module`")
+
+    app = gr.mount_gradio_app(app, demo, path="/demo")
+except Exception as e:
+    print(f"[Gradio Mount Info] Running without Gradio UI: {e}")
+
+
 # ── Run ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
