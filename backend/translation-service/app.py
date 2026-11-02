@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from translator import TranslationEngine, SUPPORTED_LANGUAGES
@@ -115,14 +116,74 @@ class HealthResponse(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Root endpoint for health checks and status."""
-    return {
-        "status": "online",
-        "service": "OmniStudy AI Translation Service",
-        "model_loaded": engine.is_loaded,
-    }
+    """Root status page for Hugging Face Spaces and web browsers."""
+    status_icon = "🟢 Online" if engine.is_loaded else "🟡 Loading Models..."
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OmniStudy AI — Translation Service</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background: #0f172a;
+                color: #f8fafc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+            }}
+            .card {{
+                background: #1e293b;
+                border: 1px solid #334155;
+                border-radius: 16px;
+                padding: 40px;
+                max-width: 600px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            }}
+            h1 {{ margin-top: 0; color: #38bdf8; font-size: 26px; }}
+            .badge {{
+                display: inline-block;
+                padding: 6px 14px;
+                background: #064e3b;
+                color: #34d399;
+                border-radius: 9999px;
+                font-weight: 600;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }}
+            p {{ line-height: 1.6; color: #94a3b8; }}
+            a {{ color: #38bdf8; text-decoration: none; font-weight: 500; }}
+            a:hover {{ text-decoration: underline; }}
+            code {{ background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #e2e8f0; font-size: 13px; }}
+            ul {{ list-style: none; padding-left: 0; margin-top: 15px; }}
+            li {{ padding: 6px 0; color: #cbd5e1; border-bottom: 1px solid #334155; }}
+            li:last-child {{ border-bottom: none; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>🌐 OmniStudy AI Translation Service</h1>
+            <div class="badge">{status_icon}</div>
+            <p>High-performance IndicTrans2 translation microservice powering multilingual translation for OmniStudy AI study modules.</p>
+            <h3>Supported Endpoints:</h3>
+            <ul>
+                <li><code>GET /health</code> — Service status & loaded models</li>
+                <li><code>GET /languages</code> — List of 6 supported Indic languages</li>
+                <li><code>POST /translate</code> — Batch plain text translation</li>
+                <li><code>POST /translate/module</code> — Structure-preserving module translation</li>
+                <li><a href="/docs" target="_blank"><strong>Interactive Swagger API Docs ↗</strong></a></li>
+            </ul>
+        </div>
+    </body>
+    </html>
+    """
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -241,20 +302,6 @@ async def translate_module_endpoint(request: TranslateModuleRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Module translation failed: {str(e)}")
-
-
-# ── Optional Gradio UI for Hugging Face Spaces ─────────────────────────────
-try:
-    import gradio as gr
-
-    with gr.Blocks(title="OmniStudy AI Translation Service") as demo:
-        gr.Markdown("# 🌐 OmniStudy AI — IndicTrans2 Translation Service")
-        gr.Markdown("Microservice is running and ready to accept API requests from OmniStudy backend.")
-        gr.Markdown("**API Endpoints:** `/health`, `/languages`, `/translate`, `/translate/module`")
-
-    app = gr.mount_gradio_app(app, demo, path="/demo")
-except Exception as e:
-    print(f"[Gradio Mount Info] Running without Gradio UI: {e}")
 
 
 # ── Run ───────────────────────────────────────────────────────────────────────
