@@ -1,3 +1,13 @@
+# ── ZERO GPU INITIALIZATION (MUST BE LINE 1 BEFORE ANY OTHER IMPORTS) ─────────
+try:
+    import spaces
+
+    def gpu_decorate(fn):
+        return spaces.GPU(fn)
+except Exception:
+    def gpu_decorate(fn):
+        return fn
+
 """
 OmniStudy AI — IndicTrans2 Translation Service
 
@@ -18,16 +28,6 @@ from pydantic import BaseModel, Field
 
 from translator import TranslationEngine, SUPPORTED_LANGUAGES
 from module_translators import translate_module, MODULE_TRANSLATORS
-
-# ── ZeroGPU Keeper (Hugging Face checks app.py for @spaces.GPU at startup) ────
-try:
-    import spaces
-
-    @spaces.GPU
-    def _zerogpu_handler():
-        pass
-except Exception:
-    pass
 
 # ── Global engine instance ────────────────────────────────────────────────────
 engine = TranslationEngine()
@@ -141,6 +141,17 @@ async def get_languages():
     }
 
 
+# ── GPU-Accelerated Execution Helpers (Required for Hugging Face ZeroGPU) ─────
+@gpu_decorate
+def _execute_text_translation(engine_instance, texts, src_lang, tgt_lang):
+    return engine_instance.translate_batch(texts, src_lang, tgt_lang)
+
+
+@gpu_decorate
+def _execute_module_translation(module_type, data, engine_instance, src_lang, tgt_lang):
+    return translate_module(module_type, data, engine_instance, src_lang, tgt_lang)
+
+
 @app.post("/translate", response_model=TranslateTextResponse)
 async def translate_texts(request: TranslateTextRequest):
     """
@@ -157,8 +168,8 @@ async def translate_texts(request: TranslateTextRequest):
 
     start = time.time()
     try:
-        translated = engine.translate_batch(
-            request.texts, request.src_lang, request.tgt_lang
+        translated = _execute_text_translation(
+            engine, request.texts, request.src_lang, request.tgt_lang
         )
         elapsed_ms = (time.time() - start) * 1000
 
@@ -203,7 +214,7 @@ async def translate_module_endpoint(request: TranslateModuleRequest):
 
     start = time.time()
     try:
-        translated_data = translate_module(
+        translated_data = _execute_module_translation(
             request.module_type,
             request.data,
             engine,
