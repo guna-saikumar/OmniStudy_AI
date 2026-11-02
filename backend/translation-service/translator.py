@@ -199,7 +199,11 @@ class TranslationEngine:
         load_dotenv("../.env")
         load_dotenv("../../.env")
         
-        hf_token = os.getenv("HF_TOKEN") or None
+        hf_token = os.getenv("HF_TOKEN")
+        if hf_token:
+            hf_token = hf_token.strip()
+        if not hf_token:
+            hf_token = None
 
         # Load English → Indic model
         print(f"[TranslationEngine] Loading EN→Indic model: {EN_INDIC_MODEL}")
