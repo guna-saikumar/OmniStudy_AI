@@ -32,6 +32,7 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
     
     try {
       toast.info('Synthesizing HD table image...', { duration: 3000 });
+      const targetWidth = Math.max(900, localRef.current.scrollWidth);
       const dataUrl = await htmlToImage.toPng(localRef.current, {
         quality: 1.0,
         pixelRatio: 4.0, // Stable high density
@@ -39,8 +40,8 @@ function SingleTable({ table, tIdx, docTitle, theme }: { table: ComparisonTable;
         style: {
           padding: '24px',
           borderRadius: '20px',
-          width: 'fit-content',
-          minWidth: '900px', // Tables usually need width
+          width: `${targetWidth}px`,
+          minWidth: `${targetWidth}px`,
           transform: 'scale(1)',
           animation: 'none !important',
           transition: 'none !important',
@@ -120,59 +121,191 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
   const allTablesRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadAll = async () => {
-    if (!allTablesRef.current) return;
     try {
       toast.info('Synthesizing high-fidelity PDF report...', { duration: 5000 });
       
-      const subItems = allTablesRef.current.querySelectorAll('[data-pdf-export-target="true"]');
-      const tableDivs = allTablesRef.current.querySelectorAll('.single-table-capture');
-      const targets = tableDivs.length > 0 ? Array.from(tableDivs) : Array.from(allTablesRef.current.children).filter(c => c.tagName !== 'DIV' || !c.classList.contains('pointer-events-none'));
-      
-      const pdfEl = document.createElement('div');
-      pdfEl.style.background = '#030712';
-      
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        // Capture each table as PNG first
-        const tableEl = allTablesRef.current.querySelectorAll('.overflow-x-auto')[i] as HTMLElement;
-        if (!tableEl) continue;
+      // @ts-ignore
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      let pageCount = 0;
 
-        const imgData = await htmlToImage.toPng(tableEl, {
-          quality: 1.0,
-          pixelRatio: 4.0,
-          backgroundColor: '#030712',
-          style: { padding: '24px', borderRadius: '20px', imageRendering: '-webkit-optimize-contrast' }
-        });
+      const addPdfPage = () => {
+        if (pageCount > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+        pageCount++;
+      };
 
-        const pg = document.createElement('div');
-        pg.style.padding = '40px';
-        pg.style.background = '#030712';
-        if (i > 0) pg.style.pageBreakBefore = 'always';
-        
-        pg.innerHTML = `
-          <div style="padding: 24px; color: #fff; font-family: 'Inter', sans-serif; border: 1px solid #1e293b; border-radius: 20px; background: #020617;">
-            <div style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 15px;">
-              <h1 style="color:#3b82f6; margin:0; font-size: 24px; font-weight: 800;">COMPARATIVE ANALYSIS</h1>
-              <p style="color:#94a3b8; margin:5px 0 0 0; text-transform:uppercase; font-size:10px; letter-spacing: 0.1em;">${table.title} | ${title}</p>
-            </div>
-            <img src="${imgData}" style="width: 100%; display: block;" />
-          </div>
-        `;
-        pdfEl.appendChild(pg);
-        await new Promise(r => setTimeout(r, 300));
+      const drawHeader = (subTitle: string) => {
+        pdf.setFillColor(3, 7, 18);
+        pdf.rect(0, 0, 210, 297, 'F');
+
+        pdf.setTextColor(59, 130, 246);
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('OMNISTUDY AI', 105, 13, { align: 'center' });
+
+        pdf.setTextColor(148, 163, 184);
+        pdf.setFontSize(8.5);
+        pdf.setFont('helvetica', 'bold');
+
+        const safeSub = (subTitle || '')
+          .replace(/[^\x20-\x7E]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const boundedSub = safeSub.length > 42 ? safeSub.slice(0, 39) + '...' : safeSub;
+        const headerText = boundedSub
+          ? `COMPARATIVE ANALYSIS • ${boundedSub.toUpperCase()}`
+          : 'COMPARATIVE ANALYSIS';
+        pdf.text(headerText, 105, 19, { align: 'center' });
+
+        pdf.setDrawColor(30, 41, 59);
+        pdf.setLineWidth(0.4);
+        pdf.line(12, 23, 198, 23);
+      };
+
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '0';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '1450px';
+      tempContainer.style.zIndex = '-9999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.visibility = 'visible';
+      tempContainer.style.overflow = 'visible';
+      tempContainer.style.pointerEvents = 'none';
+      document.body.appendChild(tempContainer);
+
+      const chunk = <T,>(arr: T[], size: number): T[][] => {
+        const res: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+        return res;
+      };
+
+      // Structure tables into compact units of up to 5 rows so 2 tables fit per page
+      interface TableSubBlock {
+        title: string;
+        subtitle?: string;
+        headers: string[];
+        rows: string[][];
+        globalRowOffset: number;
+      }
+      const tableSubBlocks: TableSubBlock[] = [];
+      for (const table of tables) {
+        if (!table.rows || table.rows.length === 0) continue;
+        const rowChunks = chunk(table.rows, 5);
+        for (let rIdx = 0; rIdx < rowChunks.length; rIdx++) {
+          tableSubBlocks.push({
+            title: table.title,
+            subtitle: rowChunks.length > 1 ? `(Part ${rIdx + 1} of ${rowChunks.length})` : undefined,
+            headers: table.headers,
+            rows: rowChunks[rIdx],
+            globalRowOffset: rIdx * 5
+          });
+        }
       }
 
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
-      const pdfOpt = {
-        margin: 0, 
-        filename: `Comparison_Report_${title.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'png' as const, quality: 1.0 },
-        html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#030712' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as any },
-        pagebreak: { mode: ['css', 'legacy'] }
-      };
-      await html2pdf().set(pdfOpt).from(pdfEl).save();
+      // Group into 2 tables per page
+      const pagePairs = chunk(tableSubBlocks, 2);
+      for (let pIdx = 0; pIdx < pagePairs.length; pIdx++) {
+        const pair = pagePairs[pIdx];
+        const pageEl = document.createElement('div');
+        pageEl.style.width = '1400px';
+        pageEl.style.minHeight = pair.length === 2 ? '1840px' : '960px';
+        pageEl.style.boxSizing = 'border-box';
+        pageEl.style.padding = '12px 24px';
+        pageEl.style.backgroundColor = '#020617';
+        pageEl.style.color = '#f8fafc';
+        pageEl.style.display = 'flex';
+        pageEl.style.flexDirection = 'column';
+        pageEl.style.justifyContent = 'space-between';
+        (pageEl.style as any).webkitFontSmoothing = 'antialiased';
+        pageEl.style.fontFamily = "'Inter', 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Nirmala UI', sans-serif";
+
+        pageEl.innerHTML = pair.map((tbl, tblIdx) => `
+          <div style="flex: 1; display: flex; flex-direction: column; border: 1px solid #1e293b; border-radius: 18px; background: #020617; overflow: hidden; width: 100%; box-sizing: border-box; ${tblIdx > 0 ? 'margin-top: 36px;' : ''}; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div style="background: linear-gradient(to right, #1e1b4b, #1e3a8a); padding: 18px 24px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; flex-shrink: 0;">
+              <h4 style="margin: 0; font-weight: 700; color: #f8fafc; font-size: 19px; word-break: break-word; overflow-wrap: anywhere;">
+                ${tbl.title} ${tbl.subtitle ? `<span style="color: #93c5fd; font-weight: 400; font-size: 15px; margin-left: 10px;">${tbl.subtitle}</span>` : ''}
+              </h4>
+              <span style="font-size: 12px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(59, 130, 246, 0.2); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.4); flex-shrink: 0;">
+                Table ${pair.length > 1 ? `${tblIdx + 1}/2` : '1/1'}
+              </span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; padding: 0; background: #000; width: 100%; box-sizing: border-box; overflow: hidden;">
+              <table style="width: 100%; height: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 14.5px; table-layout: fixed; box-sizing: border-box;">
+                <thead>
+                  <tr style="background: #0f172a; border-bottom: 1px solid #1e293b;">
+                    <th style="padding: 14px 10px; border: 1px solid #1e293b; color: #94a3b8; text-align: center; width: 48px; box-sizing: border-box; font-size: 13px;">#</th>
+                    ${tbl.headers.map(h => `<th style="padding: 14px 16px; border: 1px solid #1e293b; color: #60a5fa; text-align: left; font-weight: 700; word-break: break-word; overflow-wrap: anywhere; box-sizing: border-box; font-size: 14px;">${h.toUpperCase()}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tbl.rows.map((row, rowI) => `
+                    <tr style="background: ${rowI % 2 === 0 ? 'rgba(15, 23, 42, 0.5)' : '#020617'};">
+                      <td style="padding: 16px 10px; border: 1px solid #1e293b; text-align: center; color: #64748b; font-family: monospace; font-weight: bold; box-sizing: border-box; vertical-align: middle;">${tbl.globalRowOffset + rowI + 1}</td>
+                      ${row.map((cell, cellI) => `
+                        <td style="padding: 16px 16px; border: 1px solid #1e293b; vertical-align: middle; line-height: 1.6; word-break: break-word; overflow-wrap: anywhere; white-space: normal; box-sizing: border-box; ${cellI === 0 ? 'color: #60a5fa; font-weight: 700;' : ''}">
+                          ${cell}
+                        </td>
+                      `).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `).join('');
+
+        tempContainer.appendChild(pageEl);
+        await new Promise(r => setTimeout(r, 60));
+
+        const pageImg = await htmlToImage.toPng(pageEl, {
+          quality: 1.0,
+          pixelRatio: 3.2,
+          backgroundColor: '#020617',
+          style: {
+            transform: 'scale(1)',
+            opacity: '1',
+            overflow: 'visible',
+            imageRendering: '-webkit-optimize-contrast'
+          }
+        });
+        tempContainer.removeChild(pageEl);
+
+        addPdfPage();
+        drawHeader(`Part ${pIdx + 1} of ${pagePairs.length}`);
+
+        const boxX = 12;
+        const boxY = 27;
+        const boxW = 186;
+        const maxH = 254;
+
+        const img = new Image();
+        img.src = pageImg;
+        await new Promise((res) => {
+          if (img.complete) res(null);
+          else { img.onload = () => res(null); img.onerror = () => res(null); }
+        });
+
+        const ratio = (img.width || 1400) / (img.height || 1850);
+        let drawW = boxW;
+        let drawH = drawW / ratio;
+        if (drawH > maxH) {
+          drawH = maxH;
+          drawW = drawH * ratio;
+        }
+        const drawX = boxX + (boxW - drawW) / 2;
+        const drawY = boxY;
+
+        pdf.addImage(pageImg, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
+      }
+
+      if (tempContainer.parentNode) {
+        tempContainer.parentNode.removeChild(tempContainer);
+      }
+
+      pdf.save(`Comparison_Report_${title.replace(/\s+/g, '_')}.pdf`);
       toast.success('Full comparison PDF saved!');
     } catch (err) {
       console.error('Save all tables failed:', err);
@@ -190,25 +323,35 @@ export default function ComparativeTableViewer({ title, data, theme = 'dark' }: 
   };
 
   let tables: ComparisonTable[] = [];
-  if (data && data.length > 0) {
-    if (data[0] && 'concept' in data[0]) {
+  const rawList = data ? (Array.isArray(data) ? data : [data]) : [];
+  if (rawList.length > 0) {
+    if (rawList[0] && ('concept' in rawList[0] || 'keyFeatures' in rawList[0])) {
       tables = [
         {
           title: 'Core Concepts Comparison',
           headers: ['Concept / Section', 'Key Features', 'Examples', 'Differences / Role'],
-          rows: data.map((r: any) => [
-            sanitize(r.concept),
-            sanitize(r.keyFeatures),
-            sanitize(r.examples),
-            sanitize(r.differences)
+          rows: rawList.map((r: any) => [
+            sanitize(r.concept || r.title || r.name),
+            sanitize(r.keyFeatures || r.features || r.description),
+            sanitize(r.examples || r.example),
+            sanitize(r.differences || r.role || r.details)
           ])
         }
       ];
-    } else if (data[0] && 'title' in data[0] && 'headers' in data[0]) {
-      tables = (data as ComparisonTable[]).map(t => ({
+    } else if (rawList[0] && ('title' in rawList[0] || 'headers' in rawList[0])) {
+      tables = (rawList as ComparisonTable[]).map(t => ({
         ...t,
-        rows: t.rows.map(row => row.map(sanitize))
+        title: t.title || 'Comparison Table',
+        headers: t.headers || [],
+        rows: (t.rows || []).map(row => (Array.isArray(row) ? row.map(sanitize) : Object.values(row).map(sanitize)))
       }));
+    } else if (rawList[0] && typeof rawList[0] === 'object') {
+      const headers = Object.keys(rawList[0]);
+      tables = [{
+        title: 'Comparative Analysis',
+        headers,
+        rows: rawList.map((item: any) => headers.map(h => sanitize(item[h])))
+      }];
     }
   }
 

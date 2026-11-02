@@ -290,7 +290,13 @@ function SingleMindMap({ title, data, defaultZoom = 100, theme = 'dark', content
 export default function MindMapViewer({ title, data, theme = 'dark', contentOnly }: MindMapViewerProps) {
   const maps = useMemo(() => {
     if (!data) return [];
-    return Array.isArray(data) ? data : [data];
+    const arr = Array.isArray(data) ? data : [data];
+    return arr.filter(m => {
+      if (!m || typeof m !== 'object') return false;
+      const n = (m as any).nodes || (m as any).children;
+      if (Array.isArray(n)) return n.length > 0;
+      return !!((m as any).title || (m as any).label || (m as any).name || (m as any).heading);
+    });
   }, [data]);
 
   if (maps.length === 0) {

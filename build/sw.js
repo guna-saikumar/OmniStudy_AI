@@ -79,18 +79,30 @@ define(['./workbox-5a5d9309'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "a43fe9e1431f94a15c3c1031ea04f6e5"
+    "revision": "2f25ae7cd4b552457e79050e1cec8316"
   }, {
     "url": "assets/workbox-window.prod.es5-BIl4cyR9.js",
     "revision": null
   }, {
-    "url": "assets/index-D-IbeCZ3.css",
+    "url": "assets/purify.es-CFh60W_8.js",
     "revision": null
   }, {
-    "url": "assets/index-CEFL_V-f.js",
+    "url": "assets/jspdf.es.min-gMiPNs5g.js",
     "revision": null
   }, {
-    "url": "assets/html2pdf-BryMkw_s.js",
+    "url": "assets/index.es-Be6vbqdX.js",
+    "revision": null
+  }, {
+    "url": "assets/index-DQDi0SIC.js",
+    "revision": null
+  }, {
+    "url": "assets/index-CCnBp3L5.css",
+    "revision": null
+  }, {
+    "url": "assets/html2pdf-CKrphQIh.js",
+    "revision": null
+  }, {
+    "url": "assets/html2canvas.esm-B0tyYwQk.js",
     "revision": null
   }, {
     "url": "favicon.ico",

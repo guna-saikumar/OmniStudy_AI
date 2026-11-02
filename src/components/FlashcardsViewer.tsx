@@ -19,7 +19,18 @@ export default function FlashcardsViewer({ title, data }: FlashcardsViewerProps)
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const [order, setOrder] = useState<number[]>([]);
 
-  const rawCards: Flashcard[] = data && data.length > 0 ? data : [
+  let cardList: any[] = [];
+  if (data) {
+    if (Array.isArray(data)) cardList = data;
+    else if (Array.isArray((data as any).flashcards)) cardList = (data as any).flashcards;
+    else if (Array.isArray((data as any).cards)) cardList = (data as any).cards;
+    else cardList = [data];
+  }
+
+  const rawCards: Flashcard[] = cardList.length > 0 ? cardList.map((c: any) => ({
+    question: c.question || c.q || c.front || c.prompt || c.title || 'Question',
+    answer: c.answer || c.a || c.back || c.response || c.definition || 'Answer'
+  })) : [
     { question: 'No flashcard data found', answer: 'Please upload a PDF to generate flashcards.' },
   ];
 
