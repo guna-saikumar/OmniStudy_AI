@@ -88,37 +88,8 @@ if not hasattr(PreTrainedModel, "_omnistudy_patched"):
 
     PreTrainedModel.init_weights = _safe_init_weights
 
-# ── Compatibility Patch 4: EncoderDecoderCache subscriptable for Transformers >= 4.43 ──
-try:
-    from transformers.cache_utils import EncoderDecoderCache
-
-    if not hasattr(EncoderDecoderCache, "_omnistudy_patched"):
-        EncoderDecoderCache._omnistudy_patched = True
-
-        class _DummyCacheTensor:
-            shape = (1, 1, 0, 1)
-
-        def _encoder_decoder_cache_getitem(self, layer_idx: int):
-            if hasattr(self, "self_attention_cache"):
-                if len(self.self_attention_cache) > layer_idx:
-                    return self.self_attention_cache[layer_idx]
-                elif hasattr(self, "get_seq_length"):
-                    seq_len = self.get_seq_length()
-                    dummy = _DummyCacheTensor()
-                    dummy.shape = (1, 1, seq_len, 1)
-                    return (dummy, dummy)
-            dummy = _DummyCacheTensor()
-            return (dummy, dummy)
-
-        def _encoder_decoder_cache_len(self):
-            return len(self.self_attention_cache) if hasattr(self, "self_attention_cache") else 0
-
-        EncoderDecoderCache.__getitem__ = _encoder_decoder_cache_getitem
-        EncoderDecoderCache.__len__ = _encoder_decoder_cache_len
-except Exception:
-    pass
-
 import re
+import unicodedata
 import torch
 from typing import List, Optional
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -139,20 +110,63 @@ SUPPORTED_LANGUAGES = {
 EN_INDIC_MODEL = "ai4bharat/indictrans2-en-indic-dist-200M"
 INDIC_EN_MODEL = "ai4bharat/indictrans2-indic-en-dist-200M"
 
+
+# ── Script Transliteration (Devanagari → Target Script) ────────────────────────
+# IndicTrans2 models generate output in a unified Devanagari script space.
+# For Hindi (hin_Deva), it is already Devanagari.
+# For Telugu, Tamil, Kannada, Malayalam, it must be transliterated to the native script.
+
+_FLORES_TO_SANSCRIPT = None
+
+def _get_sanscript_mapping():
+    global _FLORES_TO_SANSCRIPT
+    if _FLORES_TO_SANSCRIPT is not None:
+        return _FLORES_TO_SANSCRIPT
+    try:
+        from indic_transliteration import sanscript
+        _FLORES_TO_SANSCRIPT = {
+            "tel_Telu": sanscript.TELUGU,
+            "hin_Deva": sanscript.DEVANAGARI,
+            "tam_Taml": sanscript.TAMIL,
+            "kan_Knda": sanscript.KANNADA,
+            "mal_Mlym": sanscript.MALAYALAM,
+            "eng_Latn": None,
+        }
+        return _FLORES_TO_SANSCRIPT
+    except ImportError:
+        _FLORES_TO_SANSCRIPT = {}
+        return _FLORES_TO_SANSCRIPT
+
+
+def _transliterate_devanagari_to_target(text: str, tgt_lang: str) -> str:
+    """Convert Devanagari text to target script (Telugu, Tamil, Kannada, Malayalam)."""
+    if tgt_lang in ("hin_Deva", "eng_Latn"):
+        return text
+
+    mapping = _get_sanscript_mapping()
+    target_scheme = mapping.get(tgt_lang) if mapping else None
+    if not target_scheme:
+        return text
+
+    try:
+        from indic_transliteration import sanscript
+        from indic_transliteration.sanscript import transliterate
+        return transliterate(text, sanscript.DEVANAGARI, target_scheme)
+    except Exception as e:
+        print(f"[TranslationEngine] Transliteration warning: {e}")
+        return text
+
+
 # ── Preservable Patterns ─────────────────────────────────────────────────────
-# These patterns are extracted before translation and reinserted after,
-# so formulas, equations, chemical symbols, names, and acronyms survive intact.
+# Patterns to keep verbatim (LaTeX, code, URLs, chemical formulas, equations)
 
 PRESERVE_PATTERNS = [
-    # ── LaTeX & Code & URLs ───────────────────────────────────────────────
-    (r'\$\$.*?\$\$', 'BLOCK_MATH'),          # Block LaTeX $$...$$
-    (r'\$[^$]+?\$', 'INLINE_MATH'),           # Inline LaTeX $...$
-    (r'\\[a-zA-Z]+\{[^}]*\}', 'LATEX_CMD'),    # LaTeX commands \cmd{...}
-    (r'```[\s\S]*?```', 'CODE_BLOCK'),        # Code blocks ```...```
-    (r'`[^`]+`', 'CODE_INLINE'),              # Inline code `...`
-    (r'https?://\S+', 'URL'),                 # URLs
-
-    # ── Chemical & Mathematical Formulas / Equations ──────────────────────
+    (r'\$\$.*?\$\$', 'BLOCK_MATH'),
+    (r'\$[^$]+?\$', 'INLINE_MATH'),
+    (r'\\[a-zA-Z]+\{[^}]*\}', 'LATEX_CMD'),
+    (r'```[\s\S]*?```', 'CODE_BLOCK'),
+    (r'`[^`]+`', 'CODE_INLINE'),
+    (r'https?://\S+', 'URL'),
     (r'\b(H2O|CO2|NaCl|H2SO4|CH4|NH3|CaCO3|O2|N2|HCl|NaOH|KOH|C6H12O6|ATP|DNA|RNA)\b', 'CHEM_FORMULA'),
     (r'\b[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\s*=\s*[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\b', 'EQUATION'),
 ]
@@ -161,13 +175,6 @@ PRESERVE_PATTERNS = [
 class TranslationEngine:
     """
     Manages IndicTrans2 models for English ↔ Indic translation.
-    
-    Uses two separate models:
-    - en-indic: English → any Indic language
-    - indic-en: any Indic language → English
-    
-    For Indic ↔ Indic (e.g., Telugu → Hindi), translation pivots
-    through English automatically.
     """
 
     def __init__(self, device: Optional[str] = None):
@@ -186,29 +193,24 @@ class TranslationEngine:
 
         print(f"[TranslationEngine] Loading models on device: {self.device}")
 
-        # Import IndicProcessor for text preprocessing
+        # Try loading IndicProcessor with all possible import variants
         try:
             from IndicTransToolkit import IndicProcessor
             self.processor = IndicProcessor(inference=True)
             print("[TranslationEngine] IndicProcessor loaded successfully")
-        except ImportError:
+        except Exception as e1:
             try:
                 from IndicTransToolkit.processor import IndicProcessor
                 self.processor = IndicProcessor(inference=True)
                 print("[TranslationEngine] IndicProcessor loaded (from processor)")
-            except ImportError:
+            except Exception as e2:
                 try:
                     from indictranstoolkit import IndicProcessor
                     self.processor = IndicProcessor(inference=True)
                     print("[TranslationEngine] IndicProcessor loaded (alt import)")
-                except ImportError:
-                    try:
-                        from indictranstoolkit.processor import IndicProcessor
-                        self.processor = IndicProcessor(inference=True)
-                        print("[TranslationEngine] IndicProcessor loaded (alt processor)")
-                    except ImportError as e:
-                        print(f"[TranslationEngine] WARNING: IndicProcessor not available: {e}")
-                        self.processor = None
+                except Exception as e3:
+                    print(f"[TranslationEngine] IndicProcessor not available (e1={e1}, e2={e2}, e3={e3}). Using robust fallback pipeline.")
+                    self.processor = None
 
         import os
         from dotenv import load_dotenv
@@ -224,85 +226,50 @@ class TranslationEngine:
 
         # Load English → Indic model
         print(f"[TranslationEngine] Loading EN→Indic model: {EN_INDIC_MODEL}")
-        try:
-            self.en_indic_tokenizer = AutoTokenizer.from_pretrained(
-                EN_INDIC_MODEL, trust_remote_code=True, token=hf_token
-            )
-            self.en_indic_model = AutoModelForSeq2SeqLM.from_pretrained(
-                EN_INDIC_MODEL, trust_remote_code=True, token=hf_token
-            ).to(self.device)
-            self.en_indic_model.eval()
-            print("[TranslationEngine] EN→Indic model loaded")
-        except Exception as e:
-            if "gated repo" in str(e).lower() or "401" in str(e) or "unauthorized" in str(e).lower():
-                print("\n" + "!" * 80)
-                print(" ERROR: Gated Hugging Face Model Access Required")
-                print(" IndicTrans2 repository requires a free Hugging Face account & token.")
-                print(" 1. Accept license at: https://huggingface.co/ai4bharat/indictrans2-en-indic-dist-200M")
-                print(" 2. Accept license at: https://huggingface.co/ai4bharat/indictrans2-indic-en-dist-200M")
-                print(" 3. Create a free Access Token at: https://huggingface.co/settings/tokens")
-                print(" 4. Add HF_TOKEN=hf_... to your .env file or run `huggingface-cli login`")
-                print("!" * 80 + "\n")
-            raise e
+        self.en_indic_tokenizer = AutoTokenizer.from_pretrained(
+            EN_INDIC_MODEL, trust_remote_code=True, token=hf_token
+        )
+        self.en_indic_model = AutoModelForSeq2SeqLM.from_pretrained(
+            EN_INDIC_MODEL, trust_remote_code=True, token=hf_token
+        ).to(self.device)
+        self.en_indic_model.eval()
+        print("[TranslationEngine] EN→Indic model loaded")
 
         # Load Indic → English model
         print(f"[TranslationEngine] Loading Indic→EN model: {INDIC_EN_MODEL}")
-        try:
-            self.indic_en_tokenizer = AutoTokenizer.from_pretrained(
-                INDIC_EN_MODEL, trust_remote_code=True, token=hf_token
-            )
-            self.indic_en_model = AutoModelForSeq2SeqLM.from_pretrained(
-                INDIC_EN_MODEL, trust_remote_code=True, token=hf_token
-            ).to(self.device)
-            self.indic_en_model.eval()
-            print("[TranslationEngine] Indic→EN model loaded")
-        except Exception as e:
-            if "gated repo" in str(e).lower() or "401" in str(e) or "unauthorized" in str(e).lower():
-                print("\n" + "!" * 80)
-                print(" ERROR: Gated Hugging Face Model Access Required")
-                print(" IndicTrans2 repository requires a free Hugging Face account & token.")
-                print(" 1. Accept license at: https://huggingface.co/ai4bharat/indictrans2-indic-en-dist-200M")
-                print(" 2. Create a free Access Token at: https://huggingface.co/settings/tokens")
-                print(" 3. Add HF_TOKEN=hf_... to your .env file or run `huggingface-cli login`")
-                print("!" * 80 + "\n")
-            raise e
+        self.indic_en_tokenizer = AutoTokenizer.from_pretrained(
+            INDIC_EN_MODEL, trust_remote_code=True, token=hf_token
+        )
+        self.indic_en_model = AutoModelForSeq2SeqLM.from_pretrained(
+            INDIC_EN_MODEL, trust_remote_code=True, token=hf_token
+        ).to(self.device)
+        self.indic_en_model.eval()
+        print("[TranslationEngine] Indic→EN model loaded")
 
         self._loaded = True
         print("[TranslationEngine] All models loaded and ready!")
 
     def _build_split_pattern(self) -> re.Pattern:
-        """
-        Build a single combined regex from all PRESERVE_PATTERNS.
-        This splits text into alternating segments: [translatable, preserved, translatable, preserved, ...]
-        """
         all_patterns = [p for p, _ in PRESERVE_PATTERNS]
         combined = "|".join(f"({p})" for p in all_patterns)
         return re.compile(combined, re.DOTALL)
 
     def _split_text(self, text: str) -> list:
-        """
-        Split text into segments. Each segment is a dict:
-          {"type": "text", "value": "..."} — translatable plain text
-          {"type": "preserve", "value": "..."} — formula/code/name to keep as-is
-        """
         pattern = self._build_split_pattern()
         segments = []
         last_end = 0
 
         for match in pattern.finditer(text):
             start, end = match.start(), match.end()
-            # Add any plain text before this match
             if start > last_end:
                 plain = text[last_end:start]
                 if plain.strip():
                     segments.append({"type": "text", "value": plain})
                 elif plain:
                     segments.append({"type": "whitespace", "value": plain})
-            # Add the preserved match
             segments.append({"type": "preserve", "value": match.group()})
             last_end = end
 
-        # Add any remaining text after the last match
         if last_end < len(text):
             remaining = text[last_end:]
             if remaining.strip():
@@ -310,74 +277,83 @@ class TranslationEngine:
             elif remaining:
                 segments.append({"type": "whitespace", "value": remaining})
 
-        # If nothing was split (no preservable patterns found), return the whole text
         if not segments:
             segments.append({"type": "text", "value": text})
 
         return segments
 
     def _preprocess(self, texts: List[str], src_lang: str, tgt_lang: str) -> List[str]:
-        """Preprocess texts: IndicTransTokenizer strictly requires language tags prefix."""
+        """
+        Preprocess input texts.
+        IndicTrans2 tokenizer's _src_tokenize strictly requires:
+            src_lang, tgt_lang, text = text.split(" ", 2)
+            assert src_lang in LANGUAGE_TAGS
+            assert tgt_lang in LANGUAGE_TAGS
+        So texts passed to tokenizer MUST start with '{src_lang} {tgt_lang} '.
+        """
         if self.processor:
             try:
-                return self.processor.preprocess_batch(texts, src_lang=src_lang, tgt_lang=tgt_lang)
-            except Exception:
-                pass
-        # Fallback: prefix each text with the required source and target language tags
-        return [f"{src_lang} {tgt_lang} {t.strip()}" for t in texts]
+                res = self.processor.preprocess_batch(texts, src_lang=src_lang, tgt_lang=tgt_lang)
+                print(f"[TranslationEngine] IndicProcessor preprocessed {len(texts)} texts")
+                return res
+            except Exception as e:
+                print(f"[TranslationEngine] IndicProcessor preprocess failed: {e}")
+
+        # Manual Fallback Preprocessing
+        processed = []
+        for text in texts:
+            t = text.strip()
+            t = unicodedata.normalize("NFC", t)
+            t = t.replace("\u200b", "").replace("\ufeff", "")
+            # MANDATORY: Prepend language tags required by tokenization_indictrans.py
+            processed.append(f"{src_lang} {tgt_lang} {t}")
+
+        return processed
 
     def _postprocess(self, texts: List[str], tgt_lang: str) -> List[str]:
-        """Postprocess translated texts using IndicProcessor if available."""
+        """
+        Postprocess output texts.
+        Converts the model's unified Devanagari output to target native script.
+        """
         if self.processor:
             try:
-                return self.processor.postprocess_batch(texts, lang=tgt_lang)
-            except Exception:
-                pass
-        # Fallback: strip any accidental language tag prefix if present in output
-        cleaned = []
-        for t in texts:
-            val = t.strip()
-            # If target language tag leaked into output, strip it
+                res = self.processor.postprocess_batch(texts, lang=tgt_lang)
+                print(f"[TranslationEngine] IndicProcessor postprocessed {len(texts)} texts")
+                return res
+            except Exception as e:
+                print(f"[TranslationEngine] IndicProcessor postprocess failed: {e}")
+
+        # Manual Fallback Postprocessing
+        results = []
+        for text in texts:
+            val = text.strip()
             if val.startswith(tgt_lang):
                 val = val[len(tgt_lang):].strip()
-            cleaned.append(val)
-        return cleaned
+            converted = _transliterate_devanagari_to_target(val, tgt_lang)
+            results.append(converted)
+        return results
 
     def translate_batch(
         self,
         texts: List[str],
         src_lang: str,
         tgt_lang: str,
-        max_length: int = 512,
+        max_length: int = 256,
         num_beams: int = 5,
     ) -> List[str]:
-        """
-        Translate a batch of texts from src_lang to tgt_lang.
-        
-        Args:
-            texts: List of strings to translate
-            src_lang: Source language short code (e.g., 'en', 'te')
-            tgt_lang: Target language short code (e.g., 'te', 'hi')
-            max_length: Maximum output length
-            num_beams: Beam search width (higher = better quality, slower)
-        
-        Returns:
-            List of translated strings
-        """
         if not self._loaded:
             raise RuntimeError("Models not loaded. Call load() first.")
 
         if src_lang == tgt_lang:
             return texts
 
-        # Filter empty strings
         non_empty_indices = [i for i, t in enumerate(texts) if t and t.strip()]
         if not non_empty_indices:
             return texts
 
         non_empty_texts = [texts[i] for i in non_empty_indices]
 
-        # Handle Indic → Indic via English pivot
+        # Indic ↔ Indic via English pivot
         if src_lang != "en" and tgt_lang != "en":
             english_texts = self._translate_direct(
                 non_empty_texts, src_lang, "en", max_length, num_beams
@@ -390,7 +366,6 @@ class TranslationEngine:
                 non_empty_texts, src_lang, tgt_lang, max_length, num_beams
             )
 
-        # Rebuild full result list preserving empty strings
         result = list(texts)
         for idx, trans in zip(non_empty_indices, translated):
             result[idx] = trans
@@ -405,14 +380,6 @@ class TranslationEngine:
         max_length: int,
         num_beams: int,
     ) -> List[str]:
-        """
-        Segment-based translation: splits each text into translatable and
-        preserved segments, translates only the translatable parts, then
-        stitches everything back together. Formulas, LaTeX, code, URLs,
-        equations, acronyms, and proper names are NEVER sent to the model.
-        """
-
-        # Determine which model to use
         if src_lang == "en":
             model = self.en_indic_model
             tokenizer = self.en_indic_tokenizer
@@ -423,15 +390,14 @@ class TranslationEngine:
         src_code = SUPPORTED_LANGUAGES[src_lang]["code"]
         tgt_code = SUPPORTED_LANGUAGES[tgt_lang]["code"]
 
-        # Step 1: Split every text into segments
+        # Step 1: Split into translatable and preserved segments
         all_segments = []
         for text in texts:
-            segments = self._split_text(text)
-            all_segments.append(segments)
+            all_segments.append(self._split_text(text))
 
-        # Step 2: Collect ALL translatable segments across all texts into a flat batch
+        # Step 2: Flatten translatable segments
         translatable_texts = []
-        translatable_map = []  # (text_idx, segment_idx)
+        translatable_map = []
 
         for text_idx, segments in enumerate(all_segments):
             for seg_idx, seg in enumerate(segments):
@@ -439,7 +405,7 @@ class TranslationEngine:
                     translatable_texts.append(seg["value"])
                     translatable_map.append((text_idx, seg_idx))
 
-        # Step 3: Translate ALL translatable segments in one efficient batch
+        # Step 3: Preprocess with language tags and generate
         if translatable_texts:
             processed = self._preprocess(translatable_texts, src_code, tgt_code)
 
@@ -449,13 +415,25 @@ class TranslationEngine:
             for batch_start in range(0, len(processed), BATCH_SIZE):
                 batch = processed[batch_start:batch_start + BATCH_SIZE]
 
-                inputs = tokenizer(
-                    batch,
-                    padding="longest",
-                    truncation=True,
-                    max_length=max_length,
-                    return_tensors="pt",
-                ).to(self.device)
+                # CRITICAL: IndicTransTokenizer requires src=True for encoding inputs
+                try:
+                    inputs = tokenizer(
+                        batch,
+                        src=True,
+                        padding="longest",
+                        truncation=True,
+                        max_length=max_length,
+                        return_tensors="pt",
+                        return_attention_mask=True,
+                    ).to(self.device)
+                except TypeError:
+                    inputs = tokenizer(
+                        batch,
+                        padding="longest",
+                        truncation=True,
+                        max_length=max_length,
+                        return_tensors="pt",
+                    ).to(self.device)
 
                 with torch.inference_mode():
                     outputs = model.generate(
@@ -463,32 +441,41 @@ class TranslationEngine:
                         num_beams=num_beams,
                         num_return_sequences=1,
                         max_length=max_length,
-                        repetition_penalty=1.2,
-                        no_repeat_ngram_size=3,
-                        early_stopping=True,
+                        min_length=0,
                         use_cache=False,
                     )
 
-                decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                # CRITICAL: IndicTransTokenizer requires src=False to decode target tokens!
+                # Without src=False, it decodes target tokens using the SOURCE (English) vocabulary,
+                # which maps Indic characters to "(" (parentheses)!
+                token_ids = outputs.detach().cpu().tolist()
+                try:
+                    decoded = tokenizer.batch_decode(token_ids, src=False)
+                except TypeError:
+                    try:
+                        decoded = tokenizer.batch_decode(outputs, src=False)
+                    except TypeError:
+                        decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+                print(f"[TranslationEngine] Raw decoded output (first): {decoded[0][:100] if decoded else 'EMPTY'}")
                 all_translations.extend(decoded)
 
-            # Postprocess
+            # Step 4: Postprocess (converts Devanagari to target script)
             all_translations = self._postprocess(all_translations, tgt_code)
+            print(f"[TranslationEngine] After postprocess (first): {all_translations[0][:100] if all_translations else 'EMPTY'}")
 
-            # Step 4: Put translated segments back in their places
+            # Step 5: Put back
             for i, (text_idx, seg_idx) in enumerate(translatable_map):
                 all_segments[text_idx][seg_idx]["value"] = all_translations[i]
 
-        # Step 5: Reassemble each text from its segments
+        # Step 6: Assemble
         result = []
         for segments in all_segments:
-            assembled = "".join(seg["value"] for seg in segments)
-            result.append(assembled)
+            result.append("".join(seg["value"] for seg in segments))
 
         return result
 
     def translate_text(self, text: str, src_lang: str, tgt_lang: str) -> str:
-        """Translate a single text string."""
         if not text or not text.strip():
             return text
         results = self.translate_batch([text], src_lang, tgt_lang)
