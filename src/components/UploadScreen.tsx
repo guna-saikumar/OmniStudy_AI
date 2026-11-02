@@ -1,4 +1,5 @@
 import { useState, useRef, DragEvent } from 'react';
+import { API_BASE_URL } from '../utils/api';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
@@ -124,7 +125,7 @@ export default function UploadScreen({
       const token = userInfo ? JSON.parse(userInfo).token : null;
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/summaries/upload`,
+        `${API_BASE_URL}/summaries/upload`,
         {
           method: 'POST',
           headers: {

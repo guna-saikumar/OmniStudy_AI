@@ -21,6 +21,7 @@ const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
 const errorMiddleware_1 = require("./middleware/errorMiddleware");
 (0, db_1.default)();
 const app = (0, express_1.default)();
+app.set('trust proxy', 1); // Trust first proxy (Render, Cloudflare, etc.)
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));

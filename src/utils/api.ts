@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// Normalize API URL to always ensure '/api' suffix regardless of how VITE_API_URL is configured on Render
+const rawUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5001/api';
+export const API_BASE_URL = rawUrl.replace(/\/+$/, '').endsWith('/api')
+    ? rawUrl.replace(/\/+$/, '')
+    : `${rawUrl.replace(/\/+$/, '')}/api`;
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },

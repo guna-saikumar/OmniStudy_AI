@@ -18,6 +18,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '../utils/api';
 
 interface HandwrittenUploadScreenProps {
   onBack: () => void;
@@ -34,7 +35,7 @@ interface OcrWord {
   confidence: number;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = API_BASE_URL;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 const ACCEPTED_EXTS = '.jpg,.jpeg,.png,.webp,.pdf';
 

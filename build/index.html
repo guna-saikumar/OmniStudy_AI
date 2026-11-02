@@ -4,10 +4,26 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>OmniStudy_AI Web App UI</title>
-      <script type="module" crossorigin src="/assets/index-CQvm0dh4.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-B7cW59P4.css">
-    </head>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <title>OmniStudy AI</title>
+      <meta name="description" content="AI-powered study platform" />
+      <meta name="theme-color" content="#4f46e5" />
+      <link rel="icon" type="image/x-icon" href="/favicon.ico">
+      <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+      <script>
+        window.deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          // Prevent the mini-infobar from appearing on mobile
+          e.preventDefault();
+          // Stash the event so it can be triggered later.
+          window.deferredInstallPrompt = e;
+        });
+      </script>
+      <script type="module" crossorigin src="/assets/index-CEFL_V-f.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-D-IbeCZ3.css">
+    <link rel="manifest" href="/manifest.webmanifest"></head>
 
     <body>
       <div id="root"></div>

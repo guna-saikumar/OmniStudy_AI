@@ -7,9 +7,9 @@ dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 const connectDB = async () => {
     try {
-        let uri = process.env.MONGODB_URI;
+        let uri = process.env.MONGODB_URI || process.env.MONGO_URI;
         if (!uri) {
-            throw new Error('MONGODB_URI is not defined in environment variables');
+            throw new Error('MONGODB_URI (or MONGO_URI) is not defined in environment variables');
         }
 
         // Advanced URI Healing: Fix unencoded @, /? formatting, and @admin patterns

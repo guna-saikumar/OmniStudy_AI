@@ -1,12 +1,13 @@
 import axios from 'axios';
 import crypto from 'crypto';
+import { callGeminiWithRetry } from './aiService';
 
 /**
  * Translation Service — communicates with the Python FastAPI translation
  * microservice running on TRANSLATION_SERVICE_URL (default: http://localhost:8000).
  *
- * This service layer is consumed by the translationController and handles
- * all HTTP communication, error handling, and content hashing.
+ * Provides automatic fallback to Gemini AI translation when the Python microservice
+ * is not running or unreachable (e.g. on Render Free Tier where PyTorch memory limits apply).
  */
 
 const TRANSLATION_SERVICE_URL = process.env.TRANSLATION_SERVICE_URL || 'http://localhost:8000';
@@ -37,15 +38,56 @@ export const MODULE_FIELD_MAP: Record<string, string> = {
 export async function checkTranslationServiceHealth(): Promise<boolean> {
     try {
         const response = await axios.get(`${TRANSLATION_SERVICE_URL}/health`, {
-            timeout: 5000,
+            timeout: 3000,
         });
-        return response.data?.model_loaded === true;
+        if (response.data?.model_loaded === true) return true;
     } catch {
-        return false;
+        // Python microservice unavailable
     }
+    // Return true if Gemini fallback is available via GEMINI_API_KEY
+    return Boolean(process.env.GEMINI_API_KEY);
 }
 
-// ── Translate Module via Python Service ──────────────────────────────────────
+// ── Fallback Translation via Gemini AI ───────────────────────────────────────
+
+async function translateModuleWithGemini(
+    moduleType: string,
+    data: any,
+    srcLang: string,
+    tgtLang: string
+): Promise<any> {
+    const langNames: Record<string, string> = {
+        en: 'English',
+        te: 'Telugu',
+        hi: 'Hindi',
+        ta: 'Tamil',
+        kn: 'Kannada',
+        ml: 'Malayalam',
+    };
+    const targetName = langNames[tgtLang] || tgtLang;
+
+    const prompt = `You are an expert multilingual academic translator for Indian languages.
+Translate the following study module content from English to ${targetName}.
+Module Type: ${moduleType}
+
+Input JSON Data:
+${JSON.stringify(data)}
+
+Strict Preservation and Formatting Requirements:
+1. Translate natural language text, descriptions, headings, questions, answers, and summaries into natural, fluent ${targetName}.
+2. CRITICAL PRESERVATION RULES:
+   - Preserve all mathematical formulas, equations, and LaTeX notation ($...$, $$...$$, E=mc^2, etc.) completely intact.
+   - Preserve all chemical notation (H2O, CO2, NaCl, ATP, DNA, etc.) completely intact.
+   - Preserve all uppercase abbreviations and technical acronyms (CPU, RAM, API, HTTP, AI, etc.) completely intact.
+   - Preserve names of scientists, researchers, and theorems (e.g. Alan Turing, Albert Einstein, Isaac Newton, Ramanujan, Dijkstra).
+   - Preserve the exact JSON schema, keys, object nesting, and array lengths.
+3. Respond ONLY with the valid JSON object containing the translated content matching the input schema. No markdown formatting, no commentary.`;
+
+    const rawResponse = await callGeminiWithRetry(prompt, 'json');
+    return JSON.parse(rawResponse);
+}
+
+// ── Translate Module (IndicTrans2 with Gemini Fallback) ─────────────────────
 
 export async function translateModuleContent(
     moduleType: string,
@@ -53,6 +95,7 @@ export async function translateModuleContent(
     srcLang: string,
     tgtLang: string
 ): Promise<any> {
+    // 1. Try IndicTrans2 Python microservice first
     try {
         const response = await axios.post(
             `${TRANSLATION_SERVICE_URL}/translate/module`,
@@ -63,23 +106,27 @@ export async function translateModuleContent(
                 tgt_lang: tgtLang,
             },
             {
-                timeout: 120000, // 2 minute timeout for large modules
+                timeout: 30000,
                 headers: { 'Content-Type': 'application/json' },
             }
         );
 
-        return response.data?.translated_data;
+        if (response.data?.translated_data) {
+            return response.data.translated_data;
+        }
     } catch (error: any) {
-        if (error.code === 'ECONNREFUSED') {
-            throw new Error(
-                'Translation service is not running. Start it with: cd backend/translation-service && source venv/bin/activate && python app.py'
-            );
-        }
-        if (error.response?.status === 503) {
-            throw new Error('Translation models are still loading. Please try again in a moment.');
-        }
-        const detail = error.response?.data?.detail || error.message;
-        throw new Error(`Translation failed: ${detail}`);
+        console.warn(
+            `[Translation] Python IndicTrans2 microservice unreachable (${error.message}). Engaging Gemini fallback...`
+        );
+    }
+
+    // 2. Fallback to Gemini AI translation
+    try {
+        console.log(`[Translation] Translating ${moduleType} to ${tgtLang} via Gemini fallback...`);
+        return await translateModuleWithGemini(moduleType, data, srcLang, tgtLang);
+    } catch (geminiError: any) {
+        console.error('[Translation] Gemini fallback also failed:', geminiError.message);
+        throw new Error(`Translation failed: ${geminiError.message}`);
     }
 }
 
