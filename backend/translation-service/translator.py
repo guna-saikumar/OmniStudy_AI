@@ -91,6 +91,14 @@ import torch
 from typing import List, Optional
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
+# ── ZeroGPU Decorator (Keeps Hugging Face ZeroGPU alive) ───────────────────────
+try:
+    import spaces
+    gpu_decorator = spaces.GPU
+except Exception:
+    def gpu_decorator(fn):
+        return fn
+
 # ── Language Configuration ────────────────────────────────────────────────────
 
 SUPPORTED_LANGUAGES = {
@@ -293,6 +301,7 @@ class TranslationEngine:
                 return texts
         return texts
 
+    @gpu_decorator
     def translate_batch(
         self,
         texts: List[str],
