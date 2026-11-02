@@ -51,38 +51,40 @@ PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
 # ── Compatibility Patch 3: Model weight tying compatibility ───────────────────
 from transformers.modeling_utils import PreTrainedModel
 
-def _tie_or_clone_weights(self, output_embeddings, input_embeddings):
-    import torch
-    if getattr(self.config, "torchscript", False):
-        output_embeddings.weight = torch.nn.Parameter(input_embeddings.weight.clone())
-    else:
-        output_embeddings.weight = input_embeddings.weight
+if not hasattr(PreTrainedModel, "_omnistudy_patched"):
+    PreTrainedModel._omnistudy_patched = True
 
-    if getattr(output_embeddings, "bias", None) is not None:
-        output_embeddings.bias.data = torch.nn.functional.pad(
-            output_embeddings.bias.data,
-            (0, output_embeddings.weight.shape[0] - output_embeddings.bias.shape[0]),
-            "constant",
-            0,
-        )
-    if hasattr(output_embeddings, "out_features") and hasattr(input_embeddings, "num_embeddings"):
-        output_embeddings.out_features = input_embeddings.num_embeddings
+    def _tie_or_clone_weights(self, output_embeddings, input_embeddings):
+        import torch
+        if getattr(self.config, "torchscript", False):
+            output_embeddings.weight = torch.nn.Parameter(input_embeddings.weight.clone())
+        else:
+            output_embeddings.weight = input_embeddings.weight
 
-PreTrainedModel._tie_or_clone_weights = _tie_or_clone_weights
+        if getattr(output_embeddings, "bias", None) is not None:
+            output_embeddings.bias.data = torch.nn.functional.pad(
+                output_embeddings.bias.data,
+                (0, output_embeddings.weight.shape[0] - output_embeddings.bias.shape[0]),
+                "constant",
+                0,
+            )
+        if hasattr(output_embeddings, "out_features") and hasattr(input_embeddings, "num_embeddings"):
+            output_embeddings.out_features = input_embeddings.num_embeddings
 
-orig_post_init = PreTrainedModel.post_init
+    PreTrainedModel._tie_or_clone_weights = _tie_or_clone_weights
 
-def _patched_post_init(self, *args, **kwargs):
-    orig_tie = self.tie_weights
-    def safe_tie_weights(*t_args, **t_kwargs):
-        try:
-            return orig_tie(*t_args, **t_kwargs)
-        except TypeError:
-            return orig_tie()
-    self.tie_weights = safe_tie_weights
-    return orig_post_init(self, *args, **kwargs)
+    _real_init_weights = PreTrainedModel.init_weights
 
-PreTrainedModel.post_init = _patched_post_init
+    def _safe_init_weights(self, *args, **kwargs):
+        orig_tie = getattr(self, "tie_weights", None)
+        if orig_tie is not None and not getattr(orig_tie, "_is_safe", False):
+            def _safe_tie(*t_args, **t_kwargs):
+                return orig_tie()
+            _safe_tie._is_safe = True
+            self.tie_weights = _safe_tie
+        return _real_init_weights(self, *args, **kwargs)
+
+    PreTrainedModel.init_weights = _safe_init_weights
 
 import re
 import torch
