@@ -188,18 +188,27 @@ class TranslationEngine:
 
         # Import IndicProcessor for text preprocessing
         try:
-            from IndicTransToolkit.processor import IndicProcessor
+            from IndicTransToolkit import IndicProcessor
             self.processor = IndicProcessor(inference=True)
             print("[TranslationEngine] IndicProcessor loaded successfully")
         except ImportError:
-            # Fallback: try alternative import path
             try:
-                from indictranstoolkit import IndicProcessor
+                from IndicTransToolkit.processor import IndicProcessor
                 self.processor = IndicProcessor(inference=True)
-                print("[TranslationEngine] IndicProcessor loaded (alt import)")
+                print("[TranslationEngine] IndicProcessor loaded (from processor)")
             except ImportError:
-                print("[TranslationEngine] WARNING: IndicProcessor not available, using basic preprocessing")
-                self.processor = None
+                try:
+                    from indictranstoolkit import IndicProcessor
+                    self.processor = IndicProcessor(inference=True)
+                    print("[TranslationEngine] IndicProcessor loaded (alt import)")
+                except ImportError:
+                    try:
+                        from indictranstoolkit.processor import IndicProcessor
+                        self.processor = IndicProcessor(inference=True)
+                        print("[TranslationEngine] IndicProcessor loaded (alt processor)")
+                    except ImportError as e:
+                        print(f"[TranslationEngine] WARNING: IndicProcessor not available: {e}")
+                        self.processor = None
 
         import os
         from dotenv import load_dotenv
