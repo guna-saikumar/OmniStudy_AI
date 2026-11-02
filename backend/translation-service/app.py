@@ -304,6 +304,40 @@ async def translate_module_endpoint(request: TranslateModuleRequest):
         raise HTTPException(status_code=500, detail=f"Module translation failed: {str(e)}")
 
 
+# ── Hugging Face ZeroGPU Gradio Binding (Required for ZeroGPU Broker) ─────────
+try:
+    import gradio as gr
+
+    @spaces.GPU
+    def gradio_translate_demo(text: str, target_language: str) -> str:
+        if not engine.is_loaded:
+            return "Models are still initializing. Please wait a moment..."
+        tgt_code = "te"
+        for code, info in SUPPORTED_LANGUAGES.items():
+            if info["name"].lower() == target_language.lower() or code == target_language:
+                tgt_code = code
+                break
+        return engine.translate_text(text, "en", tgt_code)
+
+    with gr.Blocks(title="OmniStudy AI Translation Service") as demo:
+        gr.Markdown("# 🌐 OmniStudy AI — IndicTrans2 Translation Service")
+        gr.Markdown("Microservice is online and actively serving OmniStudy AI backend requests.")
+        with gr.Row():
+            inp = gr.Textbox(label="English Text", value="Welcome to OmniStudy AI!")
+            lang = gr.Dropdown(
+                label="Target Language",
+                choices=["Telugu", "Hindi", "Tamil", "Kannada", "Malayalam"],
+                value="Telugu",
+            )
+        out = gr.Textbox(label="Translated Output")
+        btn = gr.Button("Translate (GPU)", variant="primary")
+        btn.click(fn=gradio_translate_demo, inputs=[inp, lang], outputs=out)
+
+    app = gr.mount_gradio_app(app, demo, path="/")
+except Exception as e:
+    print(f"[Gradio Mount Info] Running without Gradio UI: {e}")
+
+
 # ── Run ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
