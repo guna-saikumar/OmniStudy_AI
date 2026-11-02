@@ -19,6 +19,16 @@ from pydantic import BaseModel, Field
 from translator import TranslationEngine, SUPPORTED_LANGUAGES
 from module_translators import translate_module, MODULE_TRANSLATORS
 
+# ── ZeroGPU Keeper (Hugging Face checks app.py for @spaces.GPU at startup) ────
+try:
+    import spaces
+
+    @spaces.GPU
+    def _zerogpu_handler():
+        pass
+except Exception:
+    pass
+
 # ── Global engine instance ────────────────────────────────────────────────────
 engine = TranslationEngine()
 
