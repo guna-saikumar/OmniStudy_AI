@@ -11,17 +11,17 @@ import types
 
 # ── Compatibility Patch for IndicTrans2 with Transformers >= 4.45 / 5.x ────────
 if "transformers.onnx" not in sys.modules:
-    class DummyOnnxConfig:
-        def __init__(self, *args, **kwargs):
-            pass
+    onnx_mod = types.ModuleType("transformers.onnx")
+    onnx_mod.__file__ = "transformers/onnx.py"
 
-    class OnnxModule(types.ModuleType):
-        def __getattr__(self, name):
-            return DummyOnnxConfig
+    class OnnxConfig:
+        pass
 
-    onnx_mod = OnnxModule("transformers.onnx")
-    onnx_mod.OnnxConfig = DummyOnnxConfig
-    onnx_mod.OnnxSeq2SeqConfigWithPast = DummyOnnxConfig
+    class OnnxSeq2SeqConfigWithPast:
+        pass
+
+    onnx_mod.OnnxConfig = OnnxConfig
+    onnx_mod.OnnxSeq2SeqConfigWithPast = OnnxSeq2SeqConfigWithPast
     sys.modules["transformers.onnx"] = onnx_mod
 
 import re
