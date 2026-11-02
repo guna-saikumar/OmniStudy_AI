@@ -88,6 +88,36 @@ if not hasattr(PreTrainedModel, "_omnistudy_patched"):
 
     PreTrainedModel.init_weights = _safe_init_weights
 
+# ── Compatibility Patch 4: EncoderDecoderCache subscriptable for Transformers >= 4.43 ──
+try:
+    from transformers.cache_utils import EncoderDecoderCache
+
+    if not hasattr(EncoderDecoderCache, "_omnistudy_patched"):
+        EncoderDecoderCache._omnistudy_patched = True
+
+        class _DummyCacheTensor:
+            shape = (1, 1, 0, 1)
+
+        def _encoder_decoder_cache_getitem(self, layer_idx: int):
+            if hasattr(self, "self_attention_cache"):
+                if len(self.self_attention_cache) > layer_idx:
+                    return self.self_attention_cache[layer_idx]
+                elif hasattr(self, "get_seq_length"):
+                    seq_len = self.get_seq_length()
+                    dummy = _DummyCacheTensor()
+                    dummy.shape = (1, 1, seq_len, 1)
+                    return (dummy, dummy)
+            dummy = _DummyCacheTensor()
+            return (dummy, dummy)
+
+        def _encoder_decoder_cache_len(self):
+            return len(self.self_attention_cache) if hasattr(self, "self_attention_cache") else 0
+
+        EncoderDecoderCache.__getitem__ = _encoder_decoder_cache_getitem
+        EncoderDecoderCache.__len__ = _encoder_decoder_cache_len
+except Exception:
+    pass
+
 import re
 import torch
 from typing import List, Optional
@@ -431,6 +461,7 @@ class TranslationEngine:
                         num_beams=num_beams,
                         num_return_sequences=1,
                         max_length=max_length,
+                        use_cache=False,
                     )
 
                 decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
