@@ -1,5 +1,16 @@
 # ── ZERO GPU INITIALIZATION (MUST BE LINE 1 BEFORE ANY OTHER IMPORTS) ─────────
-import spaces
+try:
+    import spaces
+except ImportError:
+    class spaces:
+        @staticmethod
+        def GPU(fn=None, **kwargs):
+            if fn is not None:
+                return fn
+            def decorator(f):
+                return f
+            return decorator
+
 import json
 import time
 from typing import Any, Dict, List, Optional
