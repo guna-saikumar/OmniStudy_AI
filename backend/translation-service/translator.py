@@ -48,8 +48,27 @@ def _patched_tokenizer_setattr(self, name, value):
 
 PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
 
-# ── Compatibility Patch 3: Model tie_weights argument compatibility ────────────
+# ── Compatibility Patch 3: Model weight tying compatibility ───────────────────
 from transformers.modeling_utils import PreTrainedModel
+
+def _tie_or_clone_weights(self, output_embeddings, input_embeddings):
+    import torch
+    if getattr(self.config, "torchscript", False):
+        output_embeddings.weight = torch.nn.Parameter(input_embeddings.weight.clone())
+    else:
+        output_embeddings.weight = input_embeddings.weight
+
+    if getattr(output_embeddings, "bias", None) is not None:
+        output_embeddings.bias.data = torch.nn.functional.pad(
+            output_embeddings.bias.data,
+            (0, output_embeddings.weight.shape[0] - output_embeddings.bias.shape[0]),
+            "constant",
+            0,
+        )
+    if hasattr(output_embeddings, "out_features") and hasattr(input_embeddings, "num_embeddings"):
+        output_embeddings.out_features = input_embeddings.num_embeddings
+
+PreTrainedModel._tie_or_clone_weights = _tie_or_clone_weights
 
 orig_post_init = PreTrainedModel.post_init
 
