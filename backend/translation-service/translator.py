@@ -93,21 +93,6 @@ import torch
 from typing import List, Optional
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-# ── Hugging Face ZeroGPU Support ─────────────────────────────────────────────
-try:
-    import spaces
-except ImportError:
-    class spaces:
-        @staticmethod
-        def GPU(fn=None, **kwargs):
-            if fn is None:
-                return lambda f: f
-            return fn
-
-@spaces.GPU
-def _spaces_gpu_heartbeat():
-    """Hugging Face ZeroGPU heartbeat function."""
-    pass
 
 # ── Language Configuration ────────────────────────────────────────────────────
 
@@ -315,7 +300,6 @@ class TranslationEngine:
                 return texts
         return texts
 
-    @spaces.GPU
     def translate_batch(
         self,
         texts: List[str],
