@@ -153,15 +153,8 @@ PRESERVE_PATTERNS = [
     (r'https?://\S+', 'URL'),                 # URLs
 
     # ── Chemical & Mathematical Formulas / Equations ──────────────────────
-    (r'\b(H2O|CO2|NaCl|H2SO4|CH4|NH3|CaCO3|O2|N2|HCl|NaOH|KOH|C6H12O6|ATP|DNA|RNA)\b', 'CHEM_FORMULA'), # Common Chemical formulas
-    (r'\b[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\s*=\s*[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\b', 'EQUATION'), # Math equations (e.g. E=mc^2, y=mx+c, a^2+b^2=c^2, F=ma, V=IR)
-
-    # ── Acronyms & Shortforms ────────────────────────────────────────────
-    (r'\b[A-Z0-9_]{2,8}\b', 'ACRONYM'),       # All-caps shortforms & acronyms (AI, CPU, RAM, API, HTTP, URL, PDF, etc.)
-
-    # ── Proper Names & People Names ──────────────────────────────────────
-    (r'\b[A-Z][a-z]+(?:\s+[A-Z]\.?)?\s+[A-Z][a-z]+\b', 'FULL_NAME'), # Two/Three-word Proper Names (e.g. Albert Einstein, Isaac Newton, Marie Curie)
-    (r'\b(Einstein|Newton|Tesla|Pythagoras|Euclid|Aristotle|Plato|Socrates|Shakespeare|Galileo|Darwin|Curie|Pasteur|Mendel|Kepler|Hubble|Ramanujan|Feynman|Planck|Bohr|Rutherford|Gauss|Euler|Faraday|Maxwell|Hawking|Turing|Schrodinger|Heisenberg|Archimedes|Pascal|Bernoulli|Fourier|Laplace|Lagrange|Descartes|Leibniz|Dijkstra|Knuth|Karnaugh|Boolean|L\'Hopital)\b', 'FAMOUS_NAME'), # Single Famous Names
+    (r'\b(H2O|CO2|NaCl|H2SO4|CH4|NH3|CaCO3|O2|N2|HCl|NaOH|KOH|C6H12O6|ATP|DNA|RNA)\b', 'CHEM_FORMULA'),
+    (r'\b[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\s*=\s*[a-zA-Z0-9_\^\+\-\*/\=\(\)\.]+\b', 'EQUATION'),
 ]
 
 
@@ -461,6 +454,9 @@ class TranslationEngine:
                         num_beams=num_beams,
                         num_return_sequences=1,
                         max_length=max_length,
+                        repetition_penalty=1.2,
+                        no_repeat_ngram_size=3,
+                        early_stopping=True,
                         use_cache=False,
                     )
 
