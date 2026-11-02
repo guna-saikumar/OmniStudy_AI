@@ -1,12 +1,18 @@
 # ── ZERO GPU INITIALIZATION (MUST BE LINE 1 BEFORE ANY OTHER IMPORTS) ─────────
 try:
     import spaces
+except ImportError:
+    class spaces:
+        @staticmethod
+        def GPU(fn=None, **kwargs):
+            if fn is None:
+                return lambda f: f
+            return fn
 
-    def gpu_decorate(fn):
-        return spaces.GPU(fn)
-except Exception:
-    def gpu_decorate(fn):
-        return fn
+@spaces.GPU
+def _spaces_gpu_startup_check():
+    """Hugging Face ZeroGPU heartbeat function."""
+    pass
 
 """
 OmniStudy AI — IndicTrans2 Translation Service
@@ -142,12 +148,12 @@ async def get_languages():
 
 
 # ── GPU-Accelerated Execution Helpers (Required for Hugging Face ZeroGPU) ─────
-@gpu_decorate
+@spaces.GPU
 def _execute_text_translation(engine_instance, texts, src_lang, tgt_lang):
     return engine_instance.translate_batch(texts, src_lang, tgt_lang)
 
 
-@gpu_decorate
+@spaces.GPU
 def _execute_module_translation(module_type, data, engine_instance, src_lang, tgt_lang):
     return translate_module(module_type, data, engine_instance, src_lang, tgt_lang)
 

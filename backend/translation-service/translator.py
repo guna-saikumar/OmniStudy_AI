@@ -39,14 +39,16 @@ if "transformers.onnx" not in sys.modules:
 # ── Compatibility Patch: Tokenizer _special_tokens_map initialization ──────────
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
-orig_tokenizer_setattr = PreTrainedTokenizerBase.__setattr__
+if not hasattr(PreTrainedTokenizerBase, "_omnistudy_tokenizer_patched"):
+    PreTrainedTokenizerBase._omnistudy_tokenizer_patched = True
+    orig_tokenizer_setattr = PreTrainedTokenizerBase.__setattr__
 
-def _patched_tokenizer_setattr(self, name, value):
-    if not hasattr(self, "_special_tokens_map"):
-        object.__setattr__(self, "_special_tokens_map", {})
-    orig_tokenizer_setattr(self, name, value)
+    def _patched_tokenizer_setattr(self, name, value):
+        if not hasattr(self, "_special_tokens_map"):
+            object.__setattr__(self, "_special_tokens_map", {})
+        orig_tokenizer_setattr(self, name, value)
 
-PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
+    PreTrainedTokenizerBase.__setattr__ = _patched_tokenizer_setattr
 
 # ── Compatibility Patch 3: Model weight tying compatibility ───────────────────
 from transformers.modeling_utils import PreTrainedModel
@@ -91,13 +93,21 @@ import torch
 from typing import List, Optional
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-# ── ZeroGPU Decorator (Keeps Hugging Face ZeroGPU alive) ───────────────────────
+# ── Hugging Face ZeroGPU Support ─────────────────────────────────────────────
 try:
     import spaces
-    gpu_decorator = spaces.GPU
-except Exception:
-    def gpu_decorator(fn):
-        return fn
+except ImportError:
+    class spaces:
+        @staticmethod
+        def GPU(fn=None, **kwargs):
+            if fn is None:
+                return lambda f: f
+            return fn
+
+@spaces.GPU
+def _spaces_gpu_heartbeat():
+    """Hugging Face ZeroGPU heartbeat function."""
+    pass
 
 # ── Language Configuration ────────────────────────────────────────────────────
 
@@ -301,7 +311,7 @@ class TranslationEngine:
                 return texts
         return texts
 
-    @gpu_decorator
+    @spaces.GPU
     def translate_batch(
         self,
         texts: List[str],
