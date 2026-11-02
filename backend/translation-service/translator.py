@@ -12,7 +12,8 @@ import types
 # ── Compatibility Patch for IndicTrans2 with Transformers >= 4.45 / 5.x ────────
 if "transformers.onnx" not in sys.modules:
     onnx_mod = types.ModuleType("transformers.onnx")
-    onnx_mod.__file__ = "transformers/onnx.py"
+    onnx_mod.__file__ = "transformers/onnx/__init__.py"
+    onnx_mod.__path__ = ["transformers/onnx"]
 
     class OnnxConfig:
         pass
@@ -23,6 +24,17 @@ if "transformers.onnx" not in sys.modules:
     onnx_mod.OnnxConfig = OnnxConfig
     onnx_mod.OnnxSeq2SeqConfigWithPast = OnnxSeq2SeqConfigWithPast
     sys.modules["transformers.onnx"] = onnx_mod
+
+    # Submodule: transformers.onnx.utils
+    utils_mod = types.ModuleType("transformers.onnx.utils")
+    utils_mod.__file__ = "transformers/onnx/utils.py"
+
+    def compute_effective_axis_dimension(*args, **kwargs):
+        return 1
+
+    utils_mod.compute_effective_axis_dimension = compute_effective_axis_dimension
+    sys.modules["transformers.onnx.utils"] = utils_mod
+    onnx_mod.utils = utils_mod
 
 import re
 import torch
